@@ -85,6 +85,14 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
 .err-cell { position: relative; }
 .err-cell .err-msg { color: #ef4444; font-size: 11px; position: absolute; top: 100%; left: 0; white-space: nowrap; }
 
+.project-item { display:flex; align-items:center; padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee; transition:background 0.15s; font-size:14px; }
+.project-item:last-child { border-bottom:none; }
+.project-item:hover { background:#eef1ff; }
+.project-item.active { background:#dce0ff; font-weight:600; }
+.project-item .name { flex:1; }
+.project-item .status { font-size:11px; color:#999; margin-left:8px; }
+.project-item .status.current { color:#4a6cf7; }
+
 @media (max-width: 768px) {
     .form-row { flex-direction: column; gap: 10px; }
     .file-row { flex-direction: column; }
@@ -131,6 +139,14 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             </div>
         </div>
         <div class="form-group">
+            <label>命名前缀</label>
+            <input type="text" id="namePrefix" value="ERR_" placeholder="如 ERR_" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
+        </div>
+        <div class="form-group">
+            <label>命名后缀</label>
+            <input type="text" id="nameSuffix" value="" placeholder="如 _CODE" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
+        </div>
+        <div class="form-group">
             <label>定义方式</label>
             <div class="radio-group">
                 <label><input type="radio" name="style" value="define" checked onchange="onSettingsChange()"> #define</label>
@@ -155,6 +171,33 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
     </div>
 </div>
 
+<div class="card" id="projectCard">
+    <h2>📁 项目管理</h2>
+    <div class="form-row">
+        <div class="form-group" style="flex:1">
+            <label>项目文件夹</label>
+            <div class="file-row">
+                <input type="text" id="projectDir" placeholder="选择 projects 文件夹..." readonly style="flex:1">
+                <button class="btn btn-primary btn-sm" onclick="selectProjectDir()">📂 选择文件夹</button>
+                <button class="btn btn-outline btn-sm" onclick="clearProjectDir()">清除</button>
+            </div>
+        </div>
+    </div>
+    <div class="form-row" id="projectActionsRow" style="display:none">
+        <div class="form-group" style="flex:1">
+            <label>项目列表 <span id="projectCount" style="font-weight:400;color:#999"></span></label>
+            <div id="projectList" style="max-height:180px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;margin-bottom:8px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input type="text" id="newProjectName" placeholder="新项目名称..." style="padding:7px 12px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;flex:1;min-width:140px;outline:none" onkeydown="if(event.key==='Enter')newProject()">
+                <button class="btn btn-success btn-sm" onclick="newProject()">🆕 新建</button>
+                <button class="btn btn-primary btn-sm" onclick="saveProject()">💾 保存</button>
+                <button class="btn btn-outline btn-sm" onclick="saveProjectAs()">另存为...</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProject()">🗑️ 删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card" id="codesCard">
     <h2>📋 错误码列表</h2>
     <div class="table-wrap">
@@ -162,7 +205,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             <thead>
                 <tr>
                     <th style="width:40px">#</th>
-                    <th style="min-width:160px">名称 (Name)</th>
+                    <th style="min-width:160px">名称 (Body) <span id="nameTemplateHint" style="font-weight:400;color:#999;font-size:12px"></span></th>
                     <th style="width:50px;text-align:center">自动</th>
                     <th style="width:100px">码值</th>
                     <th style="width:120px">完整值 (Hex)</th>
@@ -215,9 +258,11 @@ function defaultState() {
         moduleId: 1,
         useDefine: true,
         filePath: '',
+        namePrefix: 'ERR_',
+        nameSuffix: '',
         codes: [
-            { name: 'ERR_SUCCESS', auto: true, value: 0, desc: '操作成功' },
-            { name: 'ERR_FAIL', auto: true, value: 1, desc: '操作失败' },
+            { name: 'SUCCESS', auto: true, value: 0, desc: '操作成功' },
+            { name: 'FAIL', auto: true, value: 1, desc: '操作失败' },
         ]
     };
 }
@@ -233,6 +278,8 @@ function loadState() {
             const s = JSON.parse(raw);
             if (s && s.intType && Array.isArray(s.codes)) {
                 state = s;
+                if (!state.namePrefix) state.namePrefix = 'ERR_';
+                if (!state.nameSuffix) state.nameSuffix = '';
                 return;
             }
         }
@@ -338,7 +385,10 @@ function render() {
 
         tr.innerHTML = `
             <td>${idx + 1}</td>
-            <td><input type="text" class="name-input" value="${escHtml(c.name)}" data-idx="${idx}" onchange="onNameChange(this)"></td>
+            <td>
+                <input type="text" class="name-input" value="${escHtml(c.name)}" data-idx="${idx}" onchange="onNameChange(this)" placeholder="正文">
+                <div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">→ ${escHtml(getFullName(idx))}</div>
+            </td>
             <td style="text-align:center"><input type="checkbox" ${c.auto ? 'checked' : ''} data-idx="${idx}" onchange="onAutoChange(this)"></td>
             <td>
                 ${c.auto
@@ -382,15 +432,28 @@ function render() {
     document.getElementById('intType').value = state.intType;
     document.getElementById('moduleBits').value = state.moduleBits;
     document.getElementById('moduleId').value = state.moduleId;
+    document.getElementById('namePrefix').value = state.namePrefix || '';
+    document.getElementById('nameSuffix').value = state.nameSuffix || '';
     document.querySelectorAll('input[name="style"]').forEach(r => {
         r.checked = (r.value === (state.useDefine ? 'define' : 'enum'));
     });
     document.getElementById('filePath').value = state.filePath || '';
 
     document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}位 / 错误码: ${ebits}位`;
+    const hint = document.getElementById('nameTemplateHint');
+    if (hint) {
+        const pf = state.namePrefix || '', sf = state.nameSuffix || '';
+        hint.textContent = pf || sf ? `(${pf}正文${sf})` : '';
+    }
     document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
 
     saveState();
+}
+
+function getFullName(idx) {
+    const c = state.codes[idx];
+    if (!c) return '';
+    return (state.namePrefix || '') + (c.name || '') + (state.nameSuffix || '');
 }
 
 function escHtml(s) {
@@ -412,6 +475,12 @@ function onSettingsChange() {
 
 function onModuleIdChange() {
     state.moduleId = parseInt(document.getElementById('moduleId').value) || 0;
+    render();
+}
+
+function onNameTemplateChange() {
+    state.namePrefix = document.getElementById('namePrefix').value || '';
+    state.nameSuffix = document.getElementById('nameSuffix').value || '';
     render();
 }
 
@@ -600,23 +669,25 @@ function generateCode() {
     lines.push(``);
 
     if (state.useDefine) {
+        const fullNames = state.codes.map((c,i) => getFullName(i));
         let maxNameLen = 0;
-        state.codes.forEach(c => { if (c.name.length > maxNameLen) maxNameLen = c.name.length; });
+        fullNames.forEach(n => { if (n.length > maxNameLen) maxNameLen = n.length; });
         const pad = Math.min(Math.max(maxNameLen + 2, 20), 40);
         state.codes.forEach((c, idx) => {
             const comment = c.desc ? `  // ${c.desc}` : '';
-            lines.push(`#define ${c.name.padEnd(pad)} ERR_CODE(MOD_ID, ${c.value})${comment}`);
+            lines.push(`#define ${fullNames[idx].padEnd(pad)} ERR_CODE(MOD_ID, ${c.value})${comment}`);
         });
         lines.push(``);
     } else {
         lines.push(`typedef enum {`);
+        const fullNames = state.codes.map((c,i) => getFullName(i));
         let maxNameLen = 0;
-        state.codes.forEach(c => { if (c.name.length > maxNameLen) maxNameLen = c.name.length; });
+        fullNames.forEach(n => { if (n.length > maxNameLen) maxNameLen = n.length; });
         const pad = Math.min(Math.max(maxNameLen + 2, 20), 40);
         state.codes.forEach((c, idx) => {
             const comma = (idx < state.codes.length - 1) ? ',' : ' ';
             const comment = c.desc ? `  // ${c.desc}` : '';
-            lines.push(`    ${c.name.padEnd(pad)} = ERR_CODE(MOD_ID, ${c.value})${comma}${comment}`);
+            lines.push(`    ${fullNames[idx].padEnd(pad)} = ERR_CODE(MOD_ID, ${c.value})${comma}${comment}`);
         });
         lines.push(`} err_code_t;`);
         lines.push(``);
@@ -751,16 +822,196 @@ function resetAll() {
     state = defaultState();
     selectedRow = -1;
     fileHandle = null;
+    currentProject = '';
     render();
+    renderProjectList();
     showToast('已重置为默认状态', 'info');
 }
 
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-        e.target.blur();
+// ===== Project Management =====
+let projectDirHandle = null;
+let currentProject = '';
+let projectList = [];
+
+async function selectProjectDir() {
+    try {
+        if (typeof window.showDirectoryPicker !== 'function') {
+            showToast('当前浏览器不支持文件夹选择，请使用 Chrome 或 Edge', 'error');
+            return;
+        }
+        projectDirHandle = await window.showDirectoryPicker();
+        document.getElementById('projectDir').value = projectDirHandle.name;
+        await refreshProjectList();
+        document.getElementById('projectActionsRow').style.display = '';
+        renderProjectList();
+        showToast(`已选择项目文件夹: ${projectDirHandle.name}`, 'success');
+    } catch(e) {
+        if (e.name !== 'AbortError') {
+            showToast('选择文件夹失败: ' + e.message, 'error');
+        }
     }
-});
+}
+
+function clearProjectDir() {
+    projectDirHandle = null;
+    currentProject = '';
+    projectList = [];
+    document.getElementById('projectDir').value = '';
+    document.getElementById('projectActionsRow').style.display = 'none';
+    showToast('已清除项目文件夹', 'info');
+}
+
+async function refreshProjectList() {
+    if (!projectDirHandle) return;
+    projectList = [];
+    for await (const entry of projectDirHandle.values()) {
+        if (entry.kind === 'file' && entry.name.endsWith('.json')) {
+            projectList.push(entry.name);
+        }
+    }
+    projectList.sort();
+}
+
+function renderProjectList() {
+    const container = document.getElementById('projectList');
+    const count = document.getElementById('projectCount');
+    if (!container) return;
+    container.innerHTML = '';
+    count.textContent = projectList.length > 0 ? `(${projectList.length} 个项目)` : '（暂无项目）';
+    if (projectList.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">暂无项目文件，点击"新建"开始</div>';
+        return;
+    }
+    projectList.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'project-item' + (name === currentProject ? ' active' : '');
+        div.innerHTML = `<span class="name">${escHtml(name)}</span>`;
+        if (name === currentProject) {
+            div.innerHTML += '<span class="status current">当前</span>';
+        }
+        div.addEventListener('click', () => loadProject(name));
+        div.title = '点击加载';
+        container.appendChild(div);
+    });
+}
+
+async function loadProject(name) {
+    if (!projectDirHandle) return;
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(name);
+        const file = await fileHandle.getFile();
+        const content = await file.text();
+        const data = JSON.parse(content);
+        if (data && data.intType && Array.isArray(data.codes)) {
+            state = data;
+            currentProject = name;
+            selectedRow = -1;
+            fileHandle = null;
+            render();
+            renderProjectList();
+            showToast(`✅ 已加载项目: ${name}`, 'success');
+        } else {
+            showToast('无效的项目文件', 'error');
+        }
+    } catch(e) {
+        showToast('加载失败: ' + e.message, 'error');
+    }
+}
+
+async function saveProject() {
+    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    const name = currentProject;
+    if (!name) {
+        saveProjectAs();
+        return;
+    }
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(name, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(state, null, 2));
+        await writable.close();
+        await refreshProjectList();
+        renderProjectList();
+        showToast(`💾 已保存项目: ${name}`, 'success');
+    } catch(e) {
+        showToast('保存失败: ' + e.message, 'error');
+    }
+}
+
+async function saveProjectAs() {
+    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    const name = prompt('请输入项目名称（.json 自动添加）:', '');
+    if (!name) return;
+    const filename = name.endsWith('.json') ? name : name + '.json';
+    // Check if exists
+    if (projectList.includes(filename)) {
+        if (!confirm(`项目 "${filename}" 已存在，是否覆盖？`)) return;
+    }
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(state, null, 2));
+        await writable.close();
+        currentProject = filename;
+        await refreshProjectList();
+        renderProjectList();
+        showToast(`💾 已保存项目: ${filename}`, 'success');
+    } catch(e) {
+        showToast('保存失败: ' + e.message, 'error');
+    }
+}
+
+async function newProject() {
+    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    const input = document.getElementById('newProjectName');
+    let name = input.value.trim();
+    if (!name) {
+        name = prompt('请输入新项目名称:', '');
+        if (!name) return;
+    }
+    const filename = name.endsWith('.json') ? name : name + '.json';
+    if (projectList.includes(filename)) {
+        showToast(`项目 "${filename}" 已存在`, 'error');
+        return;
+    }
+    // Create empty project file
+    state = defaultState();
+    currentProject = '';
+    selectedRow = -1;
+    fileHandle = null;
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(state, null, 2));
+        await writable.close();
+        currentProject = filename;
+        await refreshProjectList();
+        render();
+        renderProjectList();
+        showToast(`🆕 已创建新项目: ${filename}`, 'success');
+    } catch(e) {
+        showToast('创建失败: ' + e.message, 'error');
+    }
+    input.value = '';
+}
+
+async function deleteProject() {
+    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    const name = currentProject;
+    if (!name) { showToast('当前未打开任何项目', 'info'); return; }
+    if (!confirm(`确定要删除项目 "${name}" 吗？`)) return;
+    try {
+        await projectDirHandle.removeEntry(name);
+        currentProject = '';
+        await refreshProjectList();
+        renderProjectList();
+        showToast(`🗑️ 已删除项目: ${name}`, 'info');
+    } catch(e) {
+        showToast('删除失败: ' + e.message, 'error');
+    }
+}
+
+// Keyboard shortcuts
 
 // Init
 loadState();
