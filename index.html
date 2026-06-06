@@ -106,7 +106,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
 <body>
 <div class="container">
 <header>
-    <h1>⚡ 错误码编辑器 <span>Error Code Editor</span></h1>
+    <h1>�?错误码编辑器 <span>Error Code Editor</span></h1>
     <div class="actions">
         <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 导出配置</button>
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">📥 导入配置</button>
@@ -121,30 +121,30 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
         <div class="form-group">
             <label>整数类型</label>
             <select id="intType" onchange="onSettingsChange()">
-                <option value="uint8_t">uint8_t (8位)</option>
-                <option value="uint16_t">uint16_t (16位)</option>
-                <option value="uint32_t" selected>uint32_t (32位)</option>
-                <option value="uint64_t">uint64_t (64位)</option>
-                <option value="int8_t">int8_t (8位)</option>
-                <option value="int16_t">int16_t (16位)</option>
-                <option value="int32_t">int32_t (32位)</option>
-                <option value="int64_t">int64_t (64位)</option>
+                <option value="uint8_t">uint8_t (8�?</option>
+                <option value="uint16_t">uint16_t (16�?</option>
+                <option value="uint32_t" selected>uint32_t (32�?</option>
+                <option value="uint64_t">uint64_t (64�?</option>
+                <option value="int8_t">int8_t (8�?</option>
+                <option value="int16_t">int16_t (16�?</option>
+                <option value="int32_t">int32_t (32�?</option>
+                <option value="int64_t">int64_t (64�?</option>
             </select>
         </div>
         <div class="form-group">
             <label>模块位数</label>
             <div class="slider-container">
                 <input type="range" id="moduleBits" min="1" max="31" value="8" oninput="onSettingsChange()">
-                <span class="bits-info" id="bitsInfo">模块: 8位 / 错误码: 24位</span>
+                <span class="bits-info" id="bitsInfo">模块: 8�?/ 错误�? 24�?/span>
             </div>
         </div>
         <div class="form-group">
             <label>命名前缀</label>
-            <input type="text" id="namePrefix" value="ERR_" placeholder="如 ERR_" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
+            <input type="text" id="namePrefix" value="ERR_" placeholder="�?ERR_" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
         </div>
         <div class="form-group">
             <label>命名后缀</label>
-            <input type="text" id="nameSuffix" value="" placeholder="如 _CODE" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
+            <input type="text" id="nameSuffix" value="" placeholder="�?_CODE" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
         </div>
         <div class="form-group">
             <label>模块编号</label>
@@ -153,19 +153,19 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
     </div>
     <div class="form-row">
         <div class="form-group" style="flex:1">
-            <label>输出头文件路径</label>
+            <label>输出头文件路�?/label>
             <div class="file-row">
-                <input type="text" id="fileFullPath" placeholder="📁 选择输出目录后此处显示完整路径…" readonly style="flex:1;font-family:monospace;font-size:13px;background:#f5f5f5">
+                <input type="text" id="fileFullPath" placeholder="📁 选择输出目录后此处显示完整路径�? readonly style="flex:1;font-family:monospace;font-size:13px;background:#f5f5f5">
                 <button class="btn btn-primary btn-sm" onclick="selectOutDir()">📁 选择</button>
                 <button class="btn btn-outline btn-sm" onclick="manualPath()">✏️ 手动</button>
                 <button class="btn btn-outline btn-sm" onclick="clearOutDir()">清除</button>
             </div>
             <div class="file-row" style="margin-top:5px;gap:6px">
-                <span style="font-size:13px;color:#555">文件名:</span>
+                <span style="font-size:13px;color:#555">文件�?</span>
                 <input type="text" id="fileBaseName" value="err_code.h" placeholder="err_code.h" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;font-family:monospace;width:180px;outline:none" onchange="updateFullPathDisplay()">
                 <span style="font-size:13px;color:#999" id="outDirHint"></span>
             </div>
-            <div class="template-hint" id="fileHint">💡 选择输出目录后点击"生成代码"即可直接写入，同一目录只需选择一次。</div>
+            <div class="template-hint" id="fileHint">💡 选择输出目录后点�?生成代码"即可直接写入，同一目录只需选择一次�?/div>
         </div>
     </div>
 </div>
@@ -174,10 +174,10 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
     <h2>📁 项目管理</h2>
     <div class="form-row">
         <div class="form-group" style="flex:1">
-            <label>项目文件夹</label>
+            <label>项目文件�?/label>
             <div class="file-row">
-                <input type="text" id="projectDir" placeholder="选择 projects 文件夹..." readonly style="flex:1">
-                <button class="btn btn-primary btn-sm" onclick="selectProjectDir()">📂 选择文件夹</button>
+                <input type="text" id="projectDir" placeholder="选择 projects 文件�?.." readonly style="flex:1">
+                <button class="btn btn-primary btn-sm" onclick="selectProjectDir()">📂 选择文件�?/button>
                 <button class="btn btn-outline btn-sm" onclick="clearProjectDir()">清除</button>
             </div>
             <div id="projectRestoreHint" style="display:none;margin-top:4px;font-size:13px;color:#4a6cf7;background:#eef1ff;padding:6px 12px;border-radius:6px"></div>
@@ -188,18 +188,18 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             <label>项目列表 <span id="projectCount" style="font-weight:400;color:#999"></span></label>
             <div id="projectList" style="max-height:180px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;margin-bottom:8px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <input type="text" id="newProjectName" placeholder="新项目名称..." style="padding:7px 12px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;flex:1;min-width:140px;outline:none" onkeydown="if(event.key==='Enter')newProject()">
+                <input type="text" id="newProjectName" placeholder="新项目名�?.." style="padding:7px 12px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;flex:1;min-width:140px;outline:none" onkeydown="if(event.key==='Enter')newProject()">
                 <button class="btn btn-success btn-sm" onclick="newProject()">🆕 新建</button>
                 <button class="btn btn-primary btn-sm" onclick="saveProject()">💾 保存</button>
-                <button class="btn btn-outline btn-sm" onclick="saveProjectAs()">另存为...</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProject()">🗑️ 删除</button>
+                <button class="btn btn-outline btn-sm" onclick="saveProjectAs()">另存�?..</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProject()">🗑�?删除</button>
             </div>
         </div>
     </div>
 </div>
 
 <div class="card" id="codesCard">
-    <h2>📋 错误码列表</h2>
+    <h2>📋 错误码列�?/h2>
     <div class="table-wrap">
         <table>
             <thead>
@@ -207,8 +207,8 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
                     <th style="width:40px">#</th>
                     <th style="min-width:160px">名称 (Body) <span id="nameTemplateHint" style="font-weight:400;color:#999;font-size:12px"></span></th>
                     <th style="width:50px;text-align:center">自动</th>
-                    <th style="width:100px">码值</th>
-                    <th style="width:120px">完整值 (Hex)</th>
+                    <th style="width:100px">码�?/th>
+                    <th style="width:120px">完整�?(Hex)</th>
                     <th style="min-width:120px">描述 (Description)</th>
                     <th style="width:60px">操作</th>
                 </tr>
@@ -217,18 +217,18 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
         </table>
     </div>
     <div class="toolbar">
-        <button class="btn btn-success btn-sm" onclick="addCode()">＋ 添加</button>
-        <button class="btn btn-warning btn-sm" onclick="insertCode()">↑ 插入</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCode()">✕ 删除</button>
-        <input type="text" id="searchBox" placeholder="🔍 模糊搜索名称、描述、码值…" oninput="onSearchChange()" style="flex:1;min-width:140px;max-width:280px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;outline:none">
-        <span class="status-msg" id="statusMsg">共 0 个错误码</span>
+        <button class="btn btn-success btn-sm" onclick="addCode()">�?添加</button>
+        <button class="btn btn-warning btn-sm" onclick="insertCode()">�?插入</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCode()">�?删除</button>
+        <input type="text" id="searchBox" placeholder="🔍 模糊搜索名称、描述、码值�? oninput="onSearchChange()" style="flex:1;min-width:140px;max-width:280px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;outline:none">
+        <span class="status-msg" id="statusMsg">�?0 个错误码</span>
     </div>
     <div class="pagination" id="paginationBar" style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="goToPage(1)" title="首页">⏮</button>
-        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage - 1)" title="上一页">◀</button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(1)" title="首页">�?/button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage - 1)" title="上一�?>◀</button>
         <span id="pageInfo" style="font-size:13px;color:#555;padding:0 4px"></span>
-        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage + 1)" title="下一页">▶</button>
-        <button class="btn btn-outline btn-sm" onclick="goToPage(getTotalPages())" title="末页">⏭</button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage + 1)" title="下一�?>�?/button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(getTotalPages())" title="末页">�?/button>
         <span style="font-size:13px;color:#999">每页</span>
         <select id="pageSizeSelect" style="padding:4px 6px;border:1px solid #d0d0d0;border-radius:4px;font-size:13px" onchange="onPageSizeChange()">
             <option value="10">10</option>
@@ -236,7 +236,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             <option value="50">50</option>
             <option value="100">100</option>
         </select>
-        <span style="font-size:13px;color:#999">条</span>
+        <span style="font-size:13px;color:#999">�?/span>
     </div>
 </div>
 
@@ -259,7 +259,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             </label>
         </div>
         <button class="btn btn-outline" onclick="togglePreview()">🔍 预览代码</button>
-        <button class="btn btn-primary" onclick="generateAndSave()">📄 生成代码并保存</button>
+        <button class="btn btn-primary" onclick="generateAndSave()">📄 生成代码并保�?/button>
     </div>
 </div>
 
@@ -458,6 +458,12 @@ function render() {
     const tbody = document.getElementById('codesBody');
     tbody.innerHTML = '';
     let hasOverflow = false;
+    const nameDupes = new Set();
+    const nameSeen = {};
+    state.codes.forEach((c, i) => {
+        if (nameSeen[c.name] !== undefined) { nameDupes.add(c.name); nameDupes.add(state.codes[nameSeen[c.name]].name); }
+        else nameSeen[c.name] = i;
+    });
 
     const pageIndices = paginate();
     for (const idx of pageIndices) {
@@ -469,12 +475,13 @@ function render() {
         const isOverflow = Number(c.value) > maxVal;
         if (isOverflow) hasOverflow = true;
         const hasConflict = conflicts.has(idx);
+        const isNameDup = nameDupes.has(c.name);
 
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td>
                 <input type="text" class="name-input" value="${escHtml(c.name)}" data-idx="${idx}" onchange="onNameChange(this)" placeholder="正文">
-                <div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">→ ${escHtml(getFullName(idx))}</div>
+                <div style="font-size:11px;color:#888;margin-top:2px;font-family:monospace">�?${escHtml(getFullName(idx))}</div>
             </td>
             <td style="text-align:center"><input type="checkbox" ${c.auto ? 'checked' : ''} data-idx="${idx}" onchange="onAutoChange(this)"></td>
             <td>
@@ -482,19 +489,20 @@ function render() {
                     ? `<span class="value-display" data-idx="${idx}">${Number(c.value)}</span>`
                     : `<input type="number" class="value-input" value="${Number(c.value)}" data-idx="${idx}" ${isOverflow ? 'style="color:#ef4444"' : ''} onchange="onValueChange(this)">`
                 }
-                ${isOverflow && c.auto ? `<div style="color:#f59e0b;font-size:11px">⚠ 超出${ebits}位范围</div>` : ''}
+                ${isOverflow && c.auto ? `<div style="color:#f59e0b;font-size:11px">�?超出${ebits}位范�?/div>` : ''}
             </td>
             <td><span class="hex-display">${formatHex(fullVal)}</span></td>
             <td><input type="text" value="${escHtml(c.desc || '')}" data-idx="${idx}" onchange="onDescChange(this)" placeholder="描述..."></td>
             <td>
                 <div class="row-actions">
-                    ${hasConflict ? `<span class="btn-dup-row has-dup" title="码值重复">⚠</span>` : ''}
+                    ${isNameDup ? `<span class="btn-dup-row has-dup" title="名称重复">?</span>` : ''}
+                    ${hasConflict ? `<span class="btn-dup-row has-dup" title="码值重复">?</span>` : ''}
                     <button class="btn-del-row" onclick="deleteRow(${idx})" title="删除">✕</button>
                 </div>
             </td>
         `;
 
-        if (hasConflict) {
+        if (isNameDup || hasConflict) {
             tr.style.borderLeft = '3px solid #ef4444';
         } else if (isOverflow) {
             tr.style.borderLeft = '3px solid #f59e0b';
@@ -536,22 +544,24 @@ function render() {
     document.getElementById('fileBaseName').value = state.outFileName || 'err_code.h';
     updateFullPathDisplay();
 
-    document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}位 / 错误码: ${ebits}位`;
+    document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}�?/ 错误�? ${ebits}位`;
     const hint = document.getElementById('nameTemplateHint');
     if (hint) {
         const pf = state.namePrefix || '', sf = state.nameSuffix || '';
         hint.textContent = pf || sf ? `(${pf}正文${sf})` : '';
     }
     const filteredCount = getFilteredIndices().length;
-    const showing = (searchTerm && filteredCount !== state.codes.length) ? `，显示 ${filteredCount} 个` : '';
-    document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${showing}${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
+    const showing = (searchTerm && filteredCount !== state.codes.length) ? `, showing ${filteredCount}` : '';
+    const nameDupCount = findDuplicateNames().length;
+    const dupNameWarn = nameDupCount > 0 ? ' | NAMES DUPLICATE' : '';
+    document.getElementById('statusMsg').textContent = `Total ${state.codes.length} codes${showing}${hasOverflow ? ' | OVERFLOW' : ''}${conflicts.size > 0 ? ' | VALUE CONFLICT' : ''}${dupNameWarn}`;
 
     // Update pagination
     const totalPages = getTotalPages();
     const pgBar = document.getElementById('paginationBar');
     if (pgBar) {
         const total = getFilteredIndices().length;
-        document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 (${total} 条)`;
+        document.getElementById('pageInfo').textContent = `�?${currentPage} / ${totalPages} �?(${total} �?`;
         document.getElementById('pageSizeSelect').value = String(pageSize);
     }
 
@@ -615,14 +625,14 @@ function onValueChange(el) {
     const val = parseInt(el.value);
     if (isNaN(val) || val < 0) {
         el.value = state.codes[idx].value;
-        showToast('码值必须是一个非负整数', 'error');
+        showToast('码值必须是一个非负整�?, 'error');
         return;
     }
     // Check for duplicates across ALL codes
     for (let i = 0; i < state.codes.length; i++) {
         if (i === idx) continue;
         if (Number(state.codes[i].value) === val) {
-            showToast(`码值 ${val} 与第 ${i+1} 项 "${state.codes[i].name}" 重复！拒绝插入`, 'error');
+            showToast(`码�?${val} 与第 ${i+1} �?"${state.codes[i].name}" 重复！拒绝插入`, 'error');
             el.value = state.codes[idx].value;
             return;
         }
@@ -640,6 +650,33 @@ function validateDupesAndSave() {
     saveState();
 }
 
+function uniqueName(base) {
+    const names = new Set(state.codes.map(c => c.name));
+    if (!names.has(base)) return base;
+    let i = 1;
+    while (names.has(base + i)) i++;
+    return base + i;
+}
+
+function findDuplicateNames() {
+    const seen = {};
+    const dupes = [];
+    state.codes.forEach((c, i) => {
+        if (seen[c.name] !== undefined) dupes.push(c.name);
+        else seen[c.name] = i;
+    });
+    return [...new Set(dupes)];
+}
+
+function checkDupesBeforeAction(action) {
+    const dupes = findDuplicateNames();
+    if (dupes.length > 0) {
+        showToast(`存在重名错误码: ${dupes.join(', ')} — 请先修正`, 'error');
+        return false;
+    }
+    return true;
+}
+
 function addCode() {
     const ebits = getErrorCodeBits();
     const maxVal = ebits >= 32 ? Number.MAX_SAFE_INTEGER : (1 << ebits) - 1;
@@ -649,7 +686,7 @@ function addCode() {
         val = (Number(last.value) || 0) + 1;
     }
     if (val > maxVal) val = maxVal;
-    state.codes.push({ name: 'ERR_NEW', auto: true, value: val, desc: '' });
+    state.codes.push({ name: uniqueName('ERR_NEW'), auto: true, value: val, desc: '' });
     selectedRow = state.codes.length - 1;
     currentPage = getTotalPages();
     render();
@@ -683,7 +720,7 @@ function deleteCode() {
     if (selectedRow >= state.codes.length) selectedRow = state.codes.length - 1;
     if (currentPage > getTotalPages()) currentPage = getTotalPages();
     render();
-    showToast(`已删除 "${name}"`, 'info');
+    showToast(`已删�?"${name}"`, 'info');
 }
 
 function deleteRow(idx) {
@@ -693,7 +730,7 @@ function deleteRow(idx) {
     if (selectedRow === idx) selectedRow = -1;
     if (currentPage > getTotalPages()) currentPage = getTotalPages();
     render();
-    showToast(`已删除 "${name}"`, 'info');
+    showToast(`已删�?"${name}"`, 'info');
 }
 
 // File handling
@@ -734,6 +771,35 @@ async function selectOutDir() {
         }
         state.outDirName = outDirHandle.name;
         state.manualFullPath = '';
+        await saveOutDirHandle(outDirHandle);
+        updateFullPathDisplay();
+        render();
+        showToast(`已选择输出目录: ${outDirHandle.name}`, 'success');
+    } catch (e) {
+        if (e.name !== 'AbortError') {
+            showToast('选择目录失败: ' + e.message, 'error');
+        }
+    }
+}
+
+function clearOutDir() {
+    state.outDirName = '';
+    state.manualFullPath = '';
+    outDirHandle = null;
+    clearOutDirHandle();
+    updateFullPathDisplay();
+    render();
+    showToast('已清除输出目录', 'info');
+}
+        outDirHandle = await window.showDirectoryPicker();
+        const perm = await outDirHandle.requestPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+            showToast('需要读写权限才能保存文�?, 'error');
+            outDirHandle = null;
+            return;
+        }
+        state.outDirName = outDirHandle.name;
+        state.manualFullPath = '';
         updateFullPathDisplay();
         render();
         showToast(`已选择输出目录: ${outDirHandle.name}`, 'success');
@@ -750,7 +816,7 @@ function clearOutDir() {
     outDirHandle = null;
     updateFullPathDisplay();
     render();
-    showToast('已清除输出目录', 'info');
+    showToast('已清除输出目�?, 'info');
 }
 
 function manualPath() {
@@ -761,7 +827,7 @@ function manualPath() {
         outDirHandle = null;
         updateFullPathDisplay();
         render();
-        showToast(`已设置路径: ${path}`, 'info');
+        showToast(`已设置路�? ${path}`, 'info');
     }
 }
 
@@ -871,6 +937,7 @@ function togglePreview() {
 }
 
 async function generateAndSave() {
+    if (!checkDupesBeforeAction('生成')) return;
     const code = generateCode();
 
     document.getElementById('previewCode').textContent = code;
@@ -884,7 +951,7 @@ async function generateAndSave() {
             const writable = await fh.createWritable();
             await writable.write(code);
             await writable.close();
-            showToast(`✅ 已保存到: ${state.outDirName}/${filename}`, 'success');
+            showToast(`�?已保存到: ${state.outDirName}/${filename}`, 'success');
         } catch (e) {
             showToast('保存失败: ' + e.message, 'error');
         }
@@ -902,7 +969,7 @@ async function generateAndSave() {
                 const writable = await handle.createWritable();
                 await writable.write(code);
                 await writable.close();
-                showToast(`✅ 已保存到: ${handle.name}`, 'success');
+                showToast(`�?已保存到: ${handle.name}`, 'success');
             } else {
                 downloadFile(code, filename);
                 showToast('浏览器不支持直接保存，已触发下载', 'info');
@@ -910,7 +977,7 @@ async function generateAndSave() {
         } catch (e) {
             if (e.name !== 'AbortError') {
                 downloadFile(code, filename);
-                showToast('已触发下载保存', 'info');
+                showToast('已触发下载保�?, 'info');
             }
         }
     }
@@ -940,7 +1007,7 @@ function showToast(msg, type, duration) {
 function exportJSON() {
     const data = JSON.stringify(state, null, 2);
     downloadFile(data, 'err_code_config.json');
-    showToast('配置已导出', 'success');
+    showToast('配置已导�?, 'success');
 }
 
 function importJSON(event) {
@@ -954,9 +1021,9 @@ function importJSON(event) {
                 state = data;
                 selectedRow = -1;
                 render();
-                showToast('配置已导入', 'success');
+                showToast('配置已导�?, 'success');
             } else {
-                showToast('无效的配置文件', 'error');
+                showToast('无效的配置文�?, 'error');
             }
         } catch(err) {
             showToast('导入失败: ' + err.message, 'error');
@@ -967,14 +1034,14 @@ function importJSON(event) {
 }
 
 function resetAll() {
-    if (!confirm('确定要重置所有设置和错误码列表吗？')) return;
+    if (!confirm('确定要重置所有设置和错误码列表吗�?)) return;
     state = defaultState();
     selectedRow = -1;
     outDirHandle = null;
     currentProject = '';
     render();
     renderProjectList();
-    showToast('已重置为默认状态', 'info');
+    showToast('已重置为默认状�?, 'info');
 }
 
 // ===== IndexedDB: persist directory handle across sessions =====
@@ -994,24 +1061,24 @@ function openDB() {
     });
 }
 
-async function saveDirHandle(handle) {
+async function saveHandle(key, handle) {
     try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(handle, 'projectDir');
+        tx.objectStore(STORE_NAME).put(handle, key);
         await new Promise((resolve, reject) => {
             tx.oncomplete = resolve;
             tx.onerror = () => reject(tx.error);
         });
         db.close();
-    } catch(e) { console.warn('saveDirHandle failed:', e); }
+    } catch(e) { console.warn('saveHandle failed:', e); }
 }
 
-async function loadDirHandle() {
+async function loadHandle(key) {
     try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, 'readonly');
-        const req = tx.objectStore(STORE_NAME).get('projectDir');
+        const req = tx.objectStore(STORE_NAME).get(key);
         const result = await new Promise((resolve, reject) => {
             req.onsuccess = () => resolve(req.result);
             req.onerror = () => reject(req.error);
@@ -1021,11 +1088,11 @@ async function loadDirHandle() {
     } catch(e) { return null; }
 }
 
-async function clearDirHandle() {
+async function clearHandle(key) {
     try {
         const db = await openDB();
         const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).delete('projectDir');
+        tx.objectStore(STORE_NAME).delete(key);
         await new Promise((resolve, reject) => {
             tx.oncomplete = resolve;
             tx.onerror = () => reject(tx.error);
@@ -1033,6 +1100,17 @@ async function clearDirHandle() {
         db.close();
     } catch(e) {}
 }
+
+const SAVE_PROJECT_DIR = 'projectDir';
+const SAVE_OUT_DIR = 'outDir';
+
+async function saveProjectDirHandle(h) { return saveHandle(SAVE_PROJECT_DIR, h); }
+async function loadProjectDirHandle() { return loadHandle(SAVE_PROJECT_DIR); }
+async function clearProjectDirHandle() { return clearHandle(SAVE_PROJECT_DIR); }
+
+async function saveOutDirHandle(h) { return saveHandle(SAVE_OUT_DIR, h); }
+async function loadOutDirHandle() { return loadHandle(SAVE_OUT_DIR); }
+async function clearOutDirHandle() { return clearHandle(SAVE_OUT_DIR); }
 
 // ===== Project Management =====
 let projectDirHandle = null;
@@ -1046,7 +1124,7 @@ async function ensureProjectPermission() {
         if ((await projectDirHandle.queryPermission(opts)) === 'granted') return true;
         const result = await projectDirHandle.requestPermission(opts);
         if (result === 'granted') return true;
-        showToast('需要读写权限才能操作项目文件', 'error');
+        showToast('需要读写权限才能操作项目文�?, 'error');
         return false;
     } catch(e) {
         showToast('权限请求失败: ' + e.message, 'error');
@@ -1057,20 +1135,20 @@ async function ensureProjectPermission() {
 async function selectProjectDir() {
     try {
         if (typeof window.showDirectoryPicker !== 'function') {
-            showToast('当前浏览器不支持文件夹选择，请使用 Chrome 或 Edge', 'error');
+            showToast('当前浏览器不支持文件夹选择，请使用 Chrome �?Edge', 'error');
             return;
         }
         projectDirHandle = await window.showDirectoryPicker();
         // Request write permission immediately while user activation is still active
         const perm = await projectDirHandle.requestPermission({ mode: 'readwrite' });
         if (perm !== 'granted') {
-            showToast('需要读写权限才能操作项目文件', 'error');
+            showToast('需要读写权限才能操作项目文�?, 'error');
             projectDirHandle = null;
             return;
         }
         document.getElementById('projectDir').value = projectDirHandle.name;
         document.getElementById('projectRestoreHint').style.display = 'none';
-        await saveDirHandle(projectDirHandle);
+        await saveProjectDirHandle(projectDirHandle);
         await refreshProjectList();
         document.getElementById('projectActionsRow').style.display = '';
         renderProjectList();
@@ -1078,10 +1156,10 @@ async function selectProjectDir() {
         if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
             await loadProject(state.lastProjectName);
         }
-        showToast(`已选择项目文件夹: ${projectDirHandle.name}`, 'success');
+        showToast(`已选择项目文件�? ${projectDirHandle.name}`, 'success');
     } catch(e) {
         if (e.name !== 'AbortError') {
-            showToast('选择文件夹失败: ' + e.message, 'error');
+            showToast('选择文件夹失�? ' + e.message, 'error');
         }
     }
 }
@@ -1093,7 +1171,7 @@ function clearProjectDir() {
     document.getElementById('projectDir').value = '';
     document.getElementById('projectActionsRow').style.display = 'none';
     document.getElementById('projectRestoreHint').style.display = state.lastProjectName ? '' : 'none';
-    clearDirHandle();
+    clearProjectDirHandle();
     showToast('已清除项目文件夹', 'info');
 }
 
@@ -1113,9 +1191,9 @@ function renderProjectList() {
     const count = document.getElementById('projectCount');
     if (!container) return;
     container.innerHTML = '';
-    count.textContent = projectList.length > 0 ? `(${projectList.length} 个项目)` : '（暂无项目）';
+    count.textContent = projectList.length > 0 ? `(${projectList.length} 个项�?` : '（暂无项目）';
     if (projectList.length === 0) {
-        container.innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">暂无项目文件，点击"新建"开始</div>';
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px">暂无项目文件，点�?新建"开�?/div>';
         return;
     }
     projectList.forEach(name => {
@@ -1149,9 +1227,9 @@ async function loadProject(name) {
             outDirHandle = null;
             render();
             renderProjectList();
-            showToast(`✅ 已加载项目: ${name}`, 'success');
+            showToast(`�?已加载项�? ${name}`, 'success');
         } else {
-            showToast('无效的项目文件', 'error');
+            showToast('无效的项目文�?, 'error');
         }
     } catch(e) {
         showToast('加载失败: ' + e.message, 'error');
@@ -1159,6 +1237,7 @@ async function loadProject(name) {
 }
 
 async function saveProject() {
+    if (!checkDupesBeforeAction('保存')) return;
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
     if (!(await ensureProjectPermission())) return;
     const name = currentProject;
@@ -1173,16 +1252,17 @@ async function saveProject() {
         await writable.close();
         await refreshProjectList();
         renderProjectList();
-        showToast(`💾 已保存项目: ${name}`, 'success');
+        showToast(`💾 已保存项�? ${name}`, 'success');
     } catch(e) {
         showToast('保存失败: ' + e.message, 'error');
     }
 }
 
 async function saveProjectAs() {
+    if (!checkDupesBeforeAction('保存')) return;
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
     if (!(await ensureProjectPermission())) return;
-    const name = prompt('请输入项目名称（.json 自动添加）:', '');
+    const name = prompt('请输入项目名称（.json 自动添加�?', '');
     if (!name) return;
     const filename = name.endsWith('.json') ? name : name + '.json';
     if (projectList.includes(filename)) {
@@ -1198,19 +1278,19 @@ async function saveProjectAs() {
         state.lastProjectName = filename;
         await refreshProjectList();
         renderProjectList();
-        showToast(`💾 已保存项目: ${filename}`, 'success');
+        showToast(`💾 已保存项�? ${filename}`, 'success');
     } catch(e) {
         showToast('保存失败: ' + e.message, 'error');
     }
 }
 
 async function newProject() {
-    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!projectDirHandle) { showToast('请先选择项目文件�?, 'error'); return; }
     if (!(await ensureProjectPermission())) return;
     const input = document.getElementById('newProjectName');
     let name = input.value.trim();
     if (!name) {
-        showToast('请先在上方输入框中填写项目名称', 'info');
+        showToast('请先在上方输入框中填写项目名�?, 'info');
         input.focus();
         return;
     }
@@ -1241,17 +1321,17 @@ async function newProject() {
 }
 
 async function deleteProject() {
-    if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!projectDirHandle) { showToast('请先选择项目文件�?, 'error'); return; }
     if (!(await ensureProjectPermission())) return;
     const name = currentProject;
     if (!name) { showToast('当前未打开任何项目', 'info'); return; }
-    if (!confirm(`确定要删除项目 "${name}" 吗？`)) return;
+    if (!confirm(`确定要删除项�?"${name}" 吗？`)) return;
     try {
         await projectDirHandle.removeEntry(name);
         currentProject = '';
         await refreshProjectList();
         renderProjectList();
-        showToast(`🗑️ 已删除项目: ${name}`, 'info');
+        showToast(`🗑�?已删除项�? ${name}`, 'info');
     } catch(e) {
         showToast('删除失败: ' + e.message, 'error');
     }
@@ -1263,48 +1343,57 @@ async function deleteProject() {
 loadState();
 render();
 
-// Try to restore project directory handle from IndexedDB
+// Try to restore handles from IndexedDB
 (async () => {
+    // Restore output directory handle
+    if (!outDirHandle) {
+        const outStored = await loadOutDirHandle();
+        if (outStored) {
+            try {
+                const perm = await outStored.queryPermission({ mode: 'readwrite' });
+                if (perm === 'granted') {
+                    outDirHandle = outStored;
+                } else {
+                    const rePerm = await outStored.requestPermission({ mode: 'readwrite' });
+                    if (rePerm === 'granted') outDirHandle = outStored;
+                }
+            } catch(e) { clearOutDirHandle(); }
+        }
+        if (outDirHandle) {
+            state.outDirName = outDirHandle.name;
+            updateFullPathDisplay();
+            render();
+        }
+    }
+
+    // Restore project directory handle
     if (!projectDirHandle && state.lastProjectName) {
-        const stored = await loadDirHandle();
+        const stored = await loadProjectDirHandle();
         if (stored) {
             try {
                 const perm = await stored.queryPermission({ mode: 'readwrite' });
                 if (perm === 'granted') {
                     projectDirHandle = stored;
-                    document.getElementById('projectDir').value = projectDirHandle.name;
-                    document.getElementById('projectRestoreHint').style.display = 'none';
-                    await refreshProjectList();
-                    document.getElementById('projectActionsRow').style.display = '';
-                    renderProjectList();
-                    if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
-                        await loadProject(state.lastProjectName);
-                    }
-                    showToast(`✅ 已自动恢复项目目录: ${projectDirHandle.name}`, 'success');
-                    return;
+                } else {
+                    const rePerm = await stored.requestPermission({ mode: 'readwrite' });
+                    if (rePerm === 'granted') projectDirHandle = stored;
                 }
-                // Permission lost — try to re-request
-                const rePerm = await stored.requestPermission({ mode: 'readwrite' });
-                if (rePerm === 'granted') {
-                    projectDirHandle = stored;
-                    document.getElementById('projectDir').value = projectDirHandle.name;
-                    document.getElementById('projectRestoreHint').style.display = 'none';
-                    await refreshProjectList();
-                    document.getElementById('projectActionsRow').style.display = '';
-                    renderProjectList();
-                    if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
-                        await loadProject(state.lastProjectName);
-                    }
-                    showToast(`✅ 已自动恢复项目目录: ${projectDirHandle.name}`, 'success');
-                    return;
-                }
-            } catch(e) {
-                // Handle is stale, clear it
-                clearDirHandle();
+            } catch(e) { clearProjectDirHandle(); }
+        }
+        if (projectDirHandle) {
+            document.getElementById('projectDir').value = projectDirHandle.name;
+            document.getElementById('projectRestoreHint').style.display = 'none';
+            await refreshProjectList();
+            document.getElementById('projectActionsRow').style.display = '';
+            renderProjectList();
+            if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
+                await loadProject(state.lastProjectName);
             }
+            showToast(`✅ 已自动恢复项目目录: ${projectDirHandle.name}`, 'success');
+            return;
         }
     }
-    // Show hint if we couldn't restore
+    // Show hint if we couldn't restore project
     if (state.lastProjectName) {
         const hint = document.getElementById('projectRestoreHint');
         if (hint) {
@@ -1318,7 +1407,7 @@ render();
 // Recalc on window focus (in case of clock changes etc)
 window.addEventListener('focus', () => render());
 
-console.log('⚡ Error Code Editor loaded');
+console.log('�?Error Code Editor loaded');
 console.log(`Current state: ${state.codes.length} codes, type=${state.intType}, moduleBits=${state.moduleBits}`);
 </script>
 </body>
