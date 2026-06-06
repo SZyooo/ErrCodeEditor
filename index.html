@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>错误码编辑器 - Error Code Editor</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.6; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e0e0e0; }
+header h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+header h1 span { background: #4a6cf7; color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 12px; font-weight: 500; }
+header .actions { display: flex; gap: 8px; }
+.card { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #4a6cf7; display: flex; align-items: center; gap: 8px; }
+.form-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 12px; }
+.form-row:last-child { margin-bottom: 0; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 13px; font-weight: 500; color: #555; }
+.form-group select, .form-group input[type="number"], .form-group input[type="text"] { padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; background: #fafafa; transition: border-color 0.2s; outline: none; }
+.form-group select:focus, .form-group input:focus { border-color: #4a6cf7; background: #fff; }
+.form-group select { min-width: 140px; cursor: pointer; }
+.radio-group { display: flex; gap: 12px; padding: 6px 0; }
+.radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; font-weight: 400; }
+.radio-group input[type="radio"] { accent-color: #4a6cf7; }
+.slider-container { display: flex; align-items: center; gap: 12px; }
+.slider-container input[type="range"] { width: 160px; accent-color: #4a6cf7; }
+.slider-container .bits-info { font-size: 13px; color: #666; background: #f0f2f5; padding: 4px 10px; border-radius: 4px; white-space: nowrap; }
+.file-row { display: flex; gap: 8px; align-items: center; }
+.file-row input[type="text"] { flex: 1; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+.btn-primary { background: #4a6cf7; color: #fff; }
+.btn-primary:hover { background: #3a5ce5; }
+.btn-success { background: #10b981; color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-outline { background: transparent; border: 1px solid #d0d0d0; color: #333; }
+.btn-outline:hover { background: #f5f5f5; border-color: #999; }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-warning { background: #f59e0b; color: #fff; }
+.btn-warning:hover { background: #d97706; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th { background: #f8f9fc; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 13px; color: #555; border-bottom: 2px solid #e8e8e8; white-space: nowrap; }
+tbody td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+tbody tr:hover { background: #fafbff; }
+tbody tr.selected { background: #eef1ff; }
+tbody tr td input[type="text"], tbody tr td input[type="number"] { padding: 5px 8px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 13px; width: 100%; background: #fafafa; outline: none; transition: border-color 0.2s; }
+tbody tr td input:focus { border-color: #4a6cf7; background: #fff; }
+tbody tr td input.name-input { min-width: 160px; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; }
+tbody tr td input.value-input { width: 80px; text-align: right; }
+tbody tr td .value-display { padding: 5px 8px; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; color: #666; font-size: 13px; }
+tbody tr td .hex-display { font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 13px; color: #4a6cf7; font-weight: 500; }
+tbody tr td .checkbox-cell { display: flex; justify-content: center; }
+tbody tr td input[type="checkbox"] { width: 16px; height: 16px; accent-color: #4a6cf7; cursor: pointer; }
+tbody tr td .row-actions { display: flex; gap: 4px; justify-content: center; }
+tbody tr td .row-actions button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.15s; background: transparent; }
+tbody tr td .row-actions .btn-del-row:hover { background: #fee2e2; color: #ef4444; }
+tbody tr td .row-actions .btn-dup-row { color: #999; cursor: default; }
+tbody tr td .row-actions .btn-dup-row.has-dup { color: #ef4444; cursor: default; }
+tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
+
+.toolbar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.toolbar .status-msg { margin-left: auto; font-size: 13px; color: #666; padding: 6px 0; }
+
+.preview-section { margin-top: 0; }
+.preview-section pre { background: #1e1e2e; color: #cdd6f4; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 13px; line-height: 1.5; white-space: pre; tab-size: 4; max-height: 500px; overflow-y: auto; }
+.preview-section pre .kw { color: #cba6f7; }
+.preview-section pre .type { color: #89b4fa; }
+.preview-section pre .macro { color: #f9e2af; }
+.preview-section pre .num { color: #fab387; }
+.preview-section pre .str { color: #a6e3a1; }
+.preview-section pre .cmt { color: #6c7086; font-style: italic; }
+
+.toast { position: fixed; bottom: 30px; right: 30px; padding: 12px 24px; border-radius: 8px; color: #fff; font-weight: 500; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; opacity: 0; transform: translateY(20px); transition: all 0.3s; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }
+.toast.info { background: #4a6cf7; }
+
+.template-hint { font-size: 12px; color: #999; margin-top: 4px; }
+.err-cell { position: relative; }
+.err-cell .err-msg { color: #ef4444; font-size: 11px; position: absolute; top: 100%; left: 0; white-space: nowrap; }
+
+@media (max-width: 768px) {
+    .form-row { flex-direction: column; gap: 10px; }
+    .file-row { flex-direction: column; }
+    .file-row input[type="text"] { width: 100%; }
+    header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    header .actions { width: 100%; }
+    header .actions .btn { flex: 1; justify-content: center; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1>⚡ 错误码编辑器 <span>Error Code Editor</span></h1>
+    <div class="actions">
+        <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 导出配置</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">📥 导入配置</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+        <button class="btn btn-outline btn-sm" onclick="resetAll()">🔄 重置</button>
+    </div>
+</header>
+
+<div class="card" id="settingsCard">
+    <h2>⚙️ 设置</h2>
+    <div class="form-row">
+        <div class="form-group">
+            <label>整数类型</label>
+            <select id="intType" onchange="onSettingsChange()">
+                <option value="uint8_t">uint8_t (8位)</option>
+                <option value="uint16_t">uint16_t (16位)</option>
+                <option value="uint32_t" selected>uint32_t (32位)</option>
+                <option value="uint64_t">uint64_t (64位)</option>
+                <option value="int8_t">int8_t (8位)</option>
+                <option value="int16_t">int16_t (16位)</option>
+                <option value="int32_t">int32_t (32位)</option>
+                <option value="int64_t">int64_t (64位)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>模块位数</label>
+            <div class="slider-container">
+                <input type="range" id="moduleBits" min="1" max="31" value="8" oninput="onSettingsChange()">
+                <span class="bits-info" id="bitsInfo">模块: 8位 / 错误码: 24位</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>定义方式</label>
+            <div class="radio-group">
+                <label><input type="radio" name="style" value="define" checked onchange="onSettingsChange()"> #define</label>
+                <label><input type="radio" name="style" value="enum" onchange="onSettingsChange()"> enum</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>模块编号</label>
+            <input type="number" id="moduleId" value="1" min="0" onchange="onModuleIdChange()" style="width:90px">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group" style="flex:1">
+            <label>输出头文件路径</label>
+            <div class="file-row">
+                <input type="text" id="filePath" placeholder="选择或输入头文件路径..." readonly>
+                <button class="btn btn-primary btn-sm" onclick="selectFile()">📁 选择文件</button>
+                <button class="btn btn-outline btn-sm" onclick="clearFile()">清除</button>
+            </div>
+            <div class="template-hint" id="fileHint">💡 选择文件后，点击"生成代码"即可写入。同一文件只需选择一次。</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" id="codesCard">
+    <h2>📋 错误码列表</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th style="min-width:160px">名称 (Name)</th>
+                    <th style="width:50px;text-align:center">自动</th>
+                    <th style="width:100px">码值</th>
+                    <th style="width:120px">完整值 (Hex)</th>
+                    <th style="min-width:120px">描述 (Description)</th>
+                    <th style="width:60px">操作</th>
+                </tr>
+            </thead>
+            <tbody id="codesBody"></tbody>
+        </table>
+    </div>
+    <div class="toolbar">
+        <button class="btn btn-success btn-sm" onclick="addCode()">＋ 添加</button>
+        <button class="btn btn-warning btn-sm" onclick="insertCode()">↑ 插入</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCode()">✕ 删除</button>
+        <span class="status-msg" id="statusMsg">共 0 个错误码</span>
+    </div>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+    <h2>🔍 代码预览</h2>
+    <div class="preview-section">
+        <pre id="previewCode"></pre>
+    </div>
+</div>
+
+<div class="card">
+    <h2>🚀 生成</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="togglePreview()">🔍 预览代码</button>
+        <button class="btn btn-primary" onclick="generateAndSave()">📄 生成代码并保存</button>
+    </div>
+</div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const STATE_KEY = 'errCodeEditorState';
+let state = null;
+let selectedRow = -1;
+
+const TYPE_BITS = { 'uint8_t':8, 'uint16_t':16, 'uint32_t':32, 'uint64_t':64, 'int8_t':8, 'int16_t':16, 'int32_t':32, 'int64_t':64 };
+const TYPE_SIGNED = { 'uint8_t':false, 'uint16_t':false, 'uint32_t':false, 'uint64_t':false, 'int8_t':true, 'int16_t':true, 'int32_t':true, 'int64_t':true };
+
+function defaultState() {
+    return {
+        intType: 'uint32_t',
+        moduleBits: 8,
+        moduleId: 1,
+        useDefine: true,
+        filePath: '',
+        codes: [
+            { name: 'ERR_SUCCESS', auto: true, value: 0, desc: '操作成功' },
+            { name: 'ERR_FAIL', auto: true, value: 1, desc: '操作失败' },
+        ]
+    };
+}
+
+function saveState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STATE_KEY);
+        if (raw) {
+            const s = JSON.parse(raw);
+            if (s && s.intType && Array.isArray(s.codes)) {
+                state = s;
+                return;
+            }
+        }
+    } catch(e) {}
+    state = defaultState();
+}
+
+function getTotalBits() { return TYPE_BITS[state.intType] || 32; }
+
+function getErrorCodeBits() {
+    const total = getTotalBits();
+    const mod = Math.min(Math.max(state.moduleBits, 1), total - 1);
+    return total - mod;
+}
+
+function getMaxValue() {
+    const bits = getErrorCodeBits();
+    if (bits >= 64) return Infinity;
+    return (1n << BigInt(bits)) - 1n;
+    // fallback for number
+}
+
+function computeFull(codeValue) {
+    const total = getTotalBits();
+    const ebits = getErrorCodeBits();
+    const modId = Number(state.moduleId) || 0;
+    const mask = total >= 64 ? BigInt(1) << BigInt(ebits) : (1 << ebits);
+    const big = (BigInt(modId) << BigInt(ebits)) | BigInt(codeValue);
+    return big;
+}
+
+function formatHex(val) {
+    const total = getTotalBits();
+    let hex = val.toString(16).toUpperCase();
+    const bits = Math.ceil(hex.length * 4);
+    if (bits < total && total <= 32) {
+        hex = hex.padStart(Math.ceil(total / 4), '0');
+    }
+    return '0x' + hex;
+}
+
+function recalcValues() {
+    const used = new Set();
+    const ebits = getErrorCodeBits();
+    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+
+    for (const c of state.codes) {
+        if (!c.auto && c.value !== undefined && c.value !== null && c.value !== '') {
+            used.add(Number(c.value));
+        }
+    }
+
+    let prevVal = -1;
+    for (let i = 0; i < state.codes.length; i++) {
+        const c = state.codes[i];
+        if (c.auto) {
+            let val = prevVal + 1;
+            while (used.has(val) || val < 0) {
+                val++;
+            }
+            if (val > maxVal) val = maxVal;
+            c.value = val;
+            used.add(val);
+            prevVal = val;
+        } else {
+            if (c.value === undefined || c.value === null || c.value === '') {
+                c.value = 0;
+            }
+            prevVal = Number(c.value);
+        }
+    }
+
+    // Detect duplicates among fixed values
+    const fixedSeen = new Map();
+    const conflicts = new Set();
+    for (let i = 0; i < state.codes.length; i++) {
+        if (!state.codes[i].auto) {
+            const v = Number(state.codes[i].value);
+            if (fixedSeen.has(v)) {
+                conflicts.add(i);
+                conflicts.add(fixedSeen.get(v));
+            } else {
+                fixedSeen.set(v, i);
+            }
+        }
+    }
+    return conflicts;
+}
+
+function render() {
+    const conflicts = recalcValues();
+    const ebits = getErrorCodeBits();
+    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+
+    const tbody = document.getElementById('codesBody');
+    tbody.innerHTML = '';
+    let hasOverflow = false;
+
+    state.codes.forEach((c, idx) => {
+        const tr = document.createElement('tr');
+        if (idx === selectedRow) tr.className = 'selected';
+
+        const fullVal = computeFull(Number(c.value) || 0);
+
+        const isOverflow = Number(c.value) > maxVal;
+        if (isOverflow) hasOverflow = true;
+        const hasConflict = conflicts.has(idx);
+
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td><input type="text" class="name-input" value="${escHtml(c.name)}" data-idx="${idx}" onchange="onNameChange(this)"></td>
+            <td style="text-align:center"><input type="checkbox" ${c.auto ? 'checked' : ''} data-idx="${idx}" onchange="onAutoChange(this)"></td>
+            <td>
+                ${c.auto
+                    ? `<span class="value-display" data-idx="${idx}">${Number(c.value)}</span>`
+                    : `<input type="number" class="value-input" value="${Number(c.value)}" data-idx="${idx}" ${isOverflow ? 'style="color:#ef4444"' : ''} onchange="onValueChange(this)">`
+                }
+                ${isOverflow && c.auto ? `<div style="color:#f59e0b;font-size:11px">⚠ 超出${ebits}位范围</div>` : ''}
+            </td>
+            <td><span class="hex-display">${formatHex(fullVal)}</span></td>
+            <td><input type="text" value="${escHtml(c.desc || '')}" data-idx="${idx}" onchange="onDescChange(this)" placeholder="描述..."></td>
+            <td>
+                <div class="row-actions">
+                    ${hasConflict ? `<span class="btn-dup-row has-dup" title="码值重复">⚠</span>` : ''}
+                    <button class="btn-del-row" onclick="deleteRow(${idx})" title="删除">✕</button>
+                </div>
+            </td>
+        `;
+
+        if (hasConflict) {
+            tr.style.borderLeft = '3px solid #ef4444';
+        } else if (isOverflow) {
+            tr.style.borderLeft = '3px solid #f59e0b';
+        }
+
+        tr.addEventListener('click', () => { selectedRow = idx; render(); });
+        tbody.appendChild(tr);
+    });
+
+    // Validate module bits
+    const total = getTotalBits();
+    const maxBits = total - 1;
+    const modSlider = document.getElementById('moduleBits');
+    modSlider.max = maxBits;
+    if (state.moduleBits > maxBits) {
+        state.moduleBits = maxBits;
+    }
+
+    document.getElementById('intType').value = state.intType;
+    document.getElementById('moduleBits').value = state.moduleBits;
+    document.getElementById('moduleId').value = state.moduleId;
+    document.querySelectorAll('input[name="style"]').forEach(r => {
+        r.checked = (r.value === (state.useDefine ? 'define' : 'enum'));
+    });
+    document.getElementById('filePath').value = state.filePath || '';
+
+    document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}位 / 错误码: ${ebits}位`;
+    document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
+
+    saveState();
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Event handlers
+function onSettingsChange() {
+    const intType = document.getElementById('intType').value;
+    const moduleBits = parseInt(document.getElementById('moduleBits').value);
+    const useDefine = document.querySelector('input[name="style"]:checked').value === 'define';
+    state.intType = intType;
+    state.moduleBits = moduleBits;
+    state.useDefine = useDefine;
+    selectedRow = -1;
+    render();
+}
+
+function onModuleIdChange() {
+    state.moduleId = parseInt(document.getElementById('moduleId').value) || 0;
+    render();
+}
+
+function onNameChange(el) {
+    const idx = parseInt(el.dataset.idx);
+    state.codes[idx].name = el.value;
+    render();
+}
+
+function onAutoChange(el) {
+    const idx = parseInt(el.dataset.idx);
+    state.codes[idx].auto = el.checked;
+    // If switching from manual to auto, the value will be recalculated
+    if (el.checked) {
+        state.codes[idx].value = 0; // placeholder, will be recalculated
+    }
+    render();
+    validateDupesAndSave();
+}
+
+function onValueChange(el) {
+    const idx = parseInt(el.dataset.idx);
+    const val = parseInt(el.value);
+    if (isNaN(val) || val < 0) {
+        el.value = state.codes[idx].value;
+        showToast('码值必须是一个非负整数', 'error');
+        return;
+    }
+    // Check for duplicates
+    for (let i = 0; i < state.codes.length; i++) {
+        if (i === idx) continue;
+        if (!state.codes[i].auto && Number(state.codes[i].value) === val) {
+            showToast(`码值 ${val} 与第 ${i+1} 项 "${state.codes[i].name}" 重复！拒绝插入`, 'error');
+            el.value = state.codes[idx].value;
+            return;
+        }
+    }
+    state.codes[idx].value = val;
+    render();
+}
+
+function onDescChange(el) {
+    const idx = parseInt(el.dataset.idx);
+    state.codes[idx].desc = el.value;
+}
+
+function validateDupesAndSave() {
+    saveState();
+}
+
+function addCode() {
+    const ebits = getErrorCodeBits();
+    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    let val = 0;
+    if (state.codes.length > 0) {
+        const last = state.codes[state.codes.length - 1];
+        val = (Number(last.value) || 0) + 1;
+    }
+    if (val > maxVal) val = maxVal;
+    state.codes.push({ name: 'ERR_NEW', auto: true, value: val, desc: '' });
+    selectedRow = state.codes.length - 1;
+    render();
+    showToast(`已添加错误码 #${state.codes.length}`, 'success');
+}
+
+function insertCode() {
+    if (selectedRow < 0 || selectedRow >= state.codes.length) {
+        showToast('请先选择一个错误码', 'info');
+        return;
+    }
+    const ebits = getErrorCodeBits();
+    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    let val = 0;
+    if (selectedRow > 0) {
+        val = (Number(state.codes[selectedRow - 1].value) || 0) + 1;
+    }
+    if (val > maxVal) val = maxVal;
+    state.codes.splice(selectedRow, 0, { name: 'ERR_NEW', auto: true, value: val, desc: '' });
+    render();
+    showToast(`已在 #${selectedRow+1} 前插入错误码`, 'success');
+}
+
+function deleteCode() {
+    if (selectedRow < 0 || selectedRow >= state.codes.length) {
+        showToast('请先选择一个错误码', 'info');
+        return;
+    }
+    const name = state.codes[selectedRow].name;
+    state.codes.splice(selectedRow, 1);
+    if (selectedRow >= state.codes.length) selectedRow = state.codes.length - 1;
+    render();
+    showToast(`已删除 "${name}"`, 'info');
+}
+
+function deleteRow(idx) {
+    const name = state.codes[idx].name;
+    state.codes.splice(idx, 1);
+    if (selectedRow >= state.codes.length) selectedRow = state.codes.length - 1;
+    if (selectedRow === idx) selectedRow = -1;
+    render();
+    showToast(`已删除 "${name}"`, 'info');
+}
+
+// File handling
+let fileHandle = null;
+
+async function selectFile() {
+    try {
+        if (typeof window.showSaveFilePicker !== 'function') {
+            // Fallback: just let user type path
+            const path = prompt('请输入头文件完整路径：', state.filePath || '');
+            if (path) {
+                state.filePath = path;
+                render();
+                showToast(`已设置路径: ${path}`, 'info');
+            }
+            return;
+        }
+        const opts = {
+            suggestedName: 'err_code.h',
+            types: [{
+                description: 'C/C++ Header',
+                accept: { 'text/x-c': ['.h', '.hpp'] }
+            }]
+        };
+        fileHandle = await window.showSaveFilePicker(opts);
+        state.filePath = fileHandle.name;
+        render();
+        showToast(`已选择文件: ${fileHandle.name}`, 'success');
+    } catch (e) {
+        if (e.name !== 'AbortError') {
+            showToast('选择文件失败: ' + e.message, 'error');
+        }
+    }
+}
+
+function clearFile() {
+    state.filePath = '';
+    fileHandle = null;
+    render();
+    showToast('已清除文件路径', 'info');
+}
+
+// Code generation
+function generateCode() {
+    const ebits = getErrorCodeBits();
+    const total = getTotalBits();
+    const modId = Number(state.moduleId) || 0;
+    const isSigned = TYPE_SIGNED[state.intType];
+    const baseType = state.intType;
+    const modMask = ((1 << state.moduleBits) - 1);
+    const codeMask = ebits >= 32 ? '0xFFFFFFFF' : `0x${(1 << ebits).toString(16).toUpperCase()}`;
+
+    let lines = [];
+    lines.push(`#ifndef ERR_CODE_H`);
+    lines.push(`#define ERR_CODE_H`);
+    lines.push(``);
+    lines.push(`#include <stdint.h>`);
+    lines.push(``);
+    lines.push(`/**`);
+    lines.push(` * Error Code Definitions`);
+    lines.push(` * Type: ${baseType} (${total}-bit)`);
+    lines.push(` * Module bits: ${state.moduleBits}, Error code bits: ${ebits}`);
+    lines.push(` * Module ID: ${modId}`);
+    lines.push(` * Generated by Error Code Editor`);
+    lines.push(` */`);
+    lines.push(``);
+    lines.push(`#define ERR_MODULE_BITS  (${state.moduleBits})`);
+    lines.push(`#define ERR_CODE_BITS    (${ebits})`);
+    lines.push(`#define ERR_MODULE_MASK  ((1U << ERR_MODULE_BITS) - 1)`);
+    lines.push(`#define ERR_CODE_MASK    ((1U << ERR_CODE_BITS) - 1)`);
+    lines.push(``);
+    lines.push(`#define ERR_CODE(mod, val)  ((((${baseType})(mod)) << ERR_CODE_BITS) | ((${baseType})(val) & ERR_CODE_MASK))`);
+    lines.push(`#define ERR_GET_MODULE(err) (((err) >> ERR_CODE_BITS) & ERR_MODULE_MASK)`);
+    lines.push(`#define ERR_GET_CODE(err)   ((err) & ERR_CODE_MASK)`);
+    lines.push(``);
+    lines.push(`// Module ID = ${modId}`);
+    lines.push(`#define MOD_ID  (${modId})`);
+    lines.push(``);
+
+    // Max error code value
+    if (ebits < 32) {
+        const maxEC = (1 << ebits) - 1;
+        lines.push(`// Max error code value: ${maxEC} (0x${(1 << ebits).toString(16).toUpperCase()})`);
+    } else {
+        lines.push(`// Max error code value: 2^${ebits} - 1`);
+    }
+    lines.push(``);
+
+    if (state.useDefine) {
+        lines.push(`// ========== Error Code Definitions (Macro) ==========`);
+        lines.push(``);
+        state.codes.forEach((c, idx) => {
+            const fullVal = computeFull(Number(c.value) || 0);
+            const hex = formatHex(fullVal);
+            const comment = c.desc ? `  // ${c.desc}` : '';
+            lines.push(`#define ${c.name}  ERR_CODE(MOD_ID, ${c.value})${comment}`);
+        });
+        lines.push(``);
+    } else {
+        lines.push(`// ========== Error Code Definitions (Enum) ==========`);
+        lines.push(``);
+        lines.push(`typedef enum {`);
+        state.codes.forEach((c, idx) => {
+            const fullVal = computeFull(Number(c.value) || 0);
+            const hex = formatHex(fullVal);
+            const comma = (idx < state.codes.length - 1) ? ',' : ' ';
+            const comment = c.desc ? `  // ${c.desc}` : '';
+            lines.push(`    ${c.name} = ERR_CODE(MOD_ID, ${c.value})${comma}${comment}`);
+        });
+        lines.push(`} err_code_t;`);
+        lines.push(``);
+    }
+
+    lines.push(`#endif // ERR_CODE_H`);
+    return lines.join('\n');
+}
+
+function getCodePreview() {
+    return generateCode();
+}
+
+function togglePreview() {
+    const card = document.getElementById('previewCard');
+    if (card.style.display === 'none') {
+        const code = generateCode();
+        document.getElementById('previewCode').textContent = code;
+        card.style.display = 'block';
+    } else {
+        card.style.display = 'none';
+    }
+}
+
+async function generateAndSave() {
+    const code = generateCode();
+
+    // Show preview
+    document.getElementById('previewCode').textContent = code;
+    document.getElementById('previewCard').style.display = 'block';
+
+    if (!state.filePath && !fileHandle) {
+        showToast('请先选择输出头文件路径', 'error');
+        return;
+    }
+
+    try {
+        if (fileHandle) {
+            // File System Access API
+            const writable = await fileHandle.createWritable();
+            await writable.write(code);
+            await writable.close();
+            showToast(`✅ 已生成并保存到: ${fileHandle.name}`, 'success');
+        } else {
+            // Fallback: try to use the File System Access API to get a file handle
+            try {
+                if (typeof window.showSaveFilePicker === 'function') {
+                    const opts = {
+                        suggestedName: state.filePath || 'err_code.h',
+                        types: [{
+                            description: 'C/C++ Header',
+                            accept: { 'text/x-c': ['.h', '.hpp'] }
+                        }]
+                    };
+                    const handle = await window.showSaveFilePicker(opts);
+                    const writable = await handle.createWritable();
+                    await writable.write(code);
+                    await writable.close();
+                    fileHandle = handle;
+                    state.filePath = handle.name;
+                    render();
+                    showToast(`✅ 已生成并保存到: ${handle.name}`, 'success');
+                } else {
+                    // If API is not available, provide manual save
+                    downloadFile(code, state.filePath || 'err_code.h');
+                    showToast('浏览器不支持直接保存，已触发下载', 'info');
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    downloadFile(code, state.filePath || 'err_code.h');
+                    showToast('已触发下载保存', 'info');
+                }
+            }
+        }
+    } catch (e) {
+        showToast('保存失败: ' + e.message, 'error');
+    }
+}
+
+function downloadFile(content, filename) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Toast
+function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type;
+    setTimeout(() => el.classList.add('show'), 10);
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// Export/Import
+function exportJSON() {
+    const data = JSON.stringify(state, null, 2);
+    downloadFile(data, 'err_code_config.json');
+    showToast('配置已导出', 'success');
+}
+
+function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data && data.intType && Array.isArray(data.codes)) {
+                state = data;
+                selectedRow = -1;
+                render();
+                showToast('配置已导入', 'success');
+            } else {
+                showToast('无效的配置文件', 'error');
+            }
+        } catch(err) {
+            showToast('导入失败: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function resetAll() {
+    if (!confirm('确定要重置所有设置和错误码列表吗？')) return;
+    state = defaultState();
+    selectedRow = -1;
+    fileHandle = null;
+    render();
+    showToast('已重置为默认状态', 'info');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        e.target.blur();
+    }
+});
+
+// Init
+loadState();
+render();
+
+// Recalc on window focus (in case of clock changes etc)
+window.addEventListener('focus', () => render());
+
+console.log('⚡ Error Code Editor loaded');
+console.log(`Current state: ${state.codes.length} codes, type=${state.intType}, moduleBits=${state.moduleBits}`);
+</script>
+</body>
+</html>
