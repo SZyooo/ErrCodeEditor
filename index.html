@@ -266,18 +266,15 @@ function computeFull(codeValue) {
 
 function formatHex(val) {
     const total = getTotalBits();
-    let hex = val.toString(16).toUpperCase();
-    const bits = Math.ceil(hex.length * 4);
-    if (bits < total && total <= 32) {
-        hex = hex.padStart(Math.ceil(total / 4), '0');
-    }
-    return '0x' + hex;
+    const hexStr = typeof val === 'bigint' ? val.toString(16).toUpperCase() : Number(val).toString(16).toUpperCase();
+    const nibbles = Math.ceil(total / 4);
+    return '0x' + hexStr.padStart(nibbles, '0');
 }
 
 function recalcValues() {
     const used = new Set();
     const ebits = getErrorCodeBits();
-    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    const maxVal = ebits >= 32 ? Number.MAX_SAFE_INTEGER : (1 << ebits) - 1;
 
     for (const c of state.codes) {
         if (!c.auto && c.value !== undefined && c.value !== null && c.value !== '') {
@@ -305,18 +302,16 @@ function recalcValues() {
         }
     }
 
-    // Detect duplicates among fixed values
-    const fixedSeen = new Map();
+    // Detect duplicate values across ALL codes (fixed and auto)
+    const valToIdx = new Map();
     const conflicts = new Set();
     for (let i = 0; i < state.codes.length; i++) {
-        if (!state.codes[i].auto) {
-            const v = Number(state.codes[i].value);
-            if (fixedSeen.has(v)) {
-                conflicts.add(i);
-                conflicts.add(fixedSeen.get(v));
-            } else {
-                fixedSeen.set(v, i);
-            }
+        const v = Number(state.codes[i].value);
+        if (valToIdx.has(v)) {
+            conflicts.add(i);
+            conflicts.add(valToIdx.get(v));
+        } else {
+            valToIdx.set(v, i);
         }
     }
     return conflicts;
@@ -325,7 +320,7 @@ function recalcValues() {
 function render() {
     const conflicts = recalcValues();
     const ebits = getErrorCodeBits();
-    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    const maxVal = ebits >= 32 ? Number.MAX_SAFE_INTEGER : (1 << ebits) - 1;
 
     const tbody = document.getElementById('codesBody');
     tbody.innerHTML = '';
@@ -368,7 +363,10 @@ function render() {
             tr.style.borderLeft = '3px solid #f59e0b';
         }
 
-        tr.addEventListener('click', () => { selectedRow = idx; render(); });
+        tr.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            selectedRow = idx; render();
+        });
         tbody.appendChild(tr);
     });
 
@@ -442,10 +440,10 @@ function onValueChange(el) {
         showToast('码值必须是一个非负整数', 'error');
         return;
     }
-    // Check for duplicates
+    // Check for duplicates across ALL codes
     for (let i = 0; i < state.codes.length; i++) {
         if (i === idx) continue;
-        if (!state.codes[i].auto && Number(state.codes[i].value) === val) {
+        if (Number(state.codes[i].value) === val) {
             showToast(`码值 ${val} 与第 ${i+1} 项 "${state.codes[i].name}" 重复！拒绝插入`, 'error');
             el.value = state.codes[idx].value;
             return;
@@ -466,7 +464,7 @@ function validateDupesAndSave() {
 
 function addCode() {
     const ebits = getErrorCodeBits();
-    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    const maxVal = ebits >= 32 ? Number.MAX_SAFE_INTEGER : (1 << ebits) - 1;
     let val = 0;
     if (state.codes.length > 0) {
         const last = state.codes[state.codes.length - 1];
@@ -485,7 +483,7 @@ function insertCode() {
         return;
     }
     const ebits = getErrorCodeBits();
-    const maxVal = ebits >= 32 ? 0xFFFFFFFF : (1 << ebits) - 1;
+    const maxVal = ebits >= 32 ? Number.MAX_SAFE_INTEGER : (1 << ebits) - 1;
     let val = 0;
     if (selectedRow > 0) {
         val = (Number(state.codes[selectedRow - 1].value) || 0) + 1;
@@ -562,10 +560,11 @@ function generateCode() {
     const ebits = getErrorCodeBits();
     const total = getTotalBits();
     const modId = Number(state.moduleId) || 0;
-    const isSigned = TYPE_SIGNED[state.intType];
     const baseType = state.intType;
-    const modMask = ((1 << state.moduleBits) - 1);
-    const codeMask = ebits >= 32 ? '0xFFFFFFFF' : `0x${(1 << ebits).toString(16).toUpperCase()}`;
+
+    const shiftSuffix = total > 32 ? 'ULL' : 'U';
+    const modMaskVal = ((BigInt(1) << BigInt(state.moduleBits)) - 1n).toString(16).toUpperCase();
+    const codeMaskVal = ebits >= 64 ? `((${baseType})-1)` : `0x${((BigInt(1) << BigInt(ebits)) - 1n).toString(16).toUpperCase()}`;
 
     let lines = [];
     lines.push(`#ifndef ERR_CODE_H`);
@@ -583,46 +582,41 @@ function generateCode() {
     lines.push(``);
     lines.push(`#define ERR_MODULE_BITS  (${state.moduleBits})`);
     lines.push(`#define ERR_CODE_BITS    (${ebits})`);
-    lines.push(`#define ERR_MODULE_MASK  ((1U << ERR_MODULE_BITS) - 1)`);
-    lines.push(`#define ERR_CODE_MASK    ((1U << ERR_CODE_BITS) - 1)`);
     lines.push(``);
-    lines.push(`#define ERR_CODE(mod, val)  ((((${baseType})(mod)) << ERR_CODE_BITS) | ((${baseType})(val) & ERR_CODE_MASK))`);
+    lines.push(`#define ERR_MODULE_MASK  (0x${modMaskVal})`);
+    lines.push(`#define ERR_CODE_MASK    (${codeMaskVal})`);
+    lines.push(``);
+    lines.push(`// Extract module number from error code`);
     lines.push(`#define ERR_GET_MODULE(err) (((err) >> ERR_CODE_BITS) & ERR_MODULE_MASK)`);
+    lines.push(`// Extract error code value from error code`);
     lines.push(`#define ERR_GET_CODE(err)   ((err) & ERR_CODE_MASK)`);
     lines.push(``);
-    lines.push(`// Module ID = ${modId}`);
+    lines.push(`// Compose an error code from module ID and value`);
+    lines.push(`#define ERR_CODE(mod, val)  ((((${baseType})(mod)) << ERR_CODE_BITS) | ((${baseType})(val) & ERR_CODE_MASK))`);
+    lines.push(``);
     lines.push(`#define MOD_ID  (${modId})`);
     lines.push(``);
-
-    // Max error code value
-    if (ebits < 32) {
-        const maxEC = (1 << ebits) - 1;
-        lines.push(`// Max error code value: ${maxEC} (0x${(1 << ebits).toString(16).toUpperCase()})`);
-    } else {
-        lines.push(`// Max error code value: 2^${ebits} - 1`);
-    }
+    lines.push(`// ========== Error Code Values ==========`);
     lines.push(``);
 
     if (state.useDefine) {
-        lines.push(`// ========== Error Code Definitions (Macro) ==========`);
-        lines.push(``);
+        let maxNameLen = 0;
+        state.codes.forEach(c => { if (c.name.length > maxNameLen) maxNameLen = c.name.length; });
+        const pad = Math.min(Math.max(maxNameLen + 2, 20), 40);
         state.codes.forEach((c, idx) => {
-            const fullVal = computeFull(Number(c.value) || 0);
-            const hex = formatHex(fullVal);
             const comment = c.desc ? `  // ${c.desc}` : '';
-            lines.push(`#define ${c.name}  ERR_CODE(MOD_ID, ${c.value})${comment}`);
+            lines.push(`#define ${c.name.padEnd(pad)} ERR_CODE(MOD_ID, ${c.value})${comment}`);
         });
         lines.push(``);
     } else {
-        lines.push(`// ========== Error Code Definitions (Enum) ==========`);
-        lines.push(``);
         lines.push(`typedef enum {`);
+        let maxNameLen = 0;
+        state.codes.forEach(c => { if (c.name.length > maxNameLen) maxNameLen = c.name.length; });
+        const pad = Math.min(Math.max(maxNameLen + 2, 20), 40);
         state.codes.forEach((c, idx) => {
-            const fullVal = computeFull(Number(c.value) || 0);
-            const hex = formatHex(fullVal);
             const comma = (idx < state.codes.length - 1) ? ',' : ' ';
             const comment = c.desc ? `  // ${c.desc}` : '';
-            lines.push(`    ${c.name} = ERR_CODE(MOD_ID, ${c.value})${comma}${comment}`);
+            lines.push(`    ${c.name.padEnd(pad)} = ERR_CODE(MOD_ID, ${c.value})${comma}${comment}`);
         });
         lines.push(`} err_code_t;`);
         lines.push(``);
