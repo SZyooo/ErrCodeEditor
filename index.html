@@ -180,6 +180,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
                 <button class="btn btn-primary btn-sm" onclick="selectProjectDir()">📂 选择文件夹</button>
                 <button class="btn btn-outline btn-sm" onclick="clearProjectDir()">清除</button>
             </div>
+            <div id="projectRestoreHint" style="display:none;margin-top:4px;font-size:13px;color:#4a6cf7;background:#eef1ff;padding:6px 12px;border-radius:6px"></div>
         </div>
     </div>
     <div class="form-row" id="projectActionsRow" style="display:none">
@@ -926,13 +927,13 @@ function downloadFile(content, filename) {
 }
 
 // Toast
-function showToast(msg, type) {
+function showToast(msg, type, duration) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.className = 'toast ' + type;
     setTimeout(() => el.classList.add('show'), 10);
     clearTimeout(el._timer);
-    el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+    el._timer = setTimeout(() => el.classList.remove('show'), duration || 3000);
 }
 
 // Export/Import
@@ -1011,6 +1012,7 @@ async function selectProjectDir() {
             return;
         }
         document.getElementById('projectDir').value = projectDirHandle.name;
+        document.getElementById('projectRestoreHint').style.display = 'none';
         await refreshProjectList();
         document.getElementById('projectActionsRow').style.display = '';
         renderProjectList();
@@ -1032,6 +1034,7 @@ function clearProjectDir() {
     projectList = [];
     document.getElementById('projectDir').value = '';
     document.getElementById('projectActionsRow').style.display = 'none';
+    document.getElementById('projectRestoreHint').style.display = state.lastProjectName ? '' : 'none';
     showToast('已清除项目文件夹', 'info');
 }
 
@@ -1200,9 +1203,16 @@ async function deleteProject() {
 // Init
 loadState();
 render();
-// Remind user to select project folder if they have a last project
-if (state.lastProjectName && !projectDirHandle) {
-    console.log(`💡 Last project was "${state.lastProjectName}" — select the projects/ folder to auto-load it`);
+// Show visible reminder to select project folder
+if (state.lastProjectName) {
+    const hint = document.getElementById('projectRestoreHint');
+    if (hint) {
+        hint.style.display = projectDirHandle ? 'none' : '';
+        hint.textContent = `📂 上次项目: ${state.lastProjectName} — 点击上方"选择文件夹"选中 projects/ 目录即可自动恢复`;
+        if (!projectDirHandle) {
+            setTimeout(() => showToast(`📂 上次项目 "${state.lastProjectName}" — 选择 projects/ 文件夹即可自动恢复`, 'info', 5000), 500);
+        }
+    }
 }
 
 // Recalc on window focus (in case of clock changes etc)
