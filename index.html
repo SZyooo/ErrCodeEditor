@@ -278,8 +278,9 @@ function loadState() {
             const s = JSON.parse(raw);
             if (s && s.intType && Array.isArray(s.codes)) {
                 state = s;
-                if (!state.namePrefix) state.namePrefix = 'ERR_';
-                if (!state.nameSuffix) state.nameSuffix = '';
+                // Migration: old state (no namePrefix) -> keep names as-is with empty prefix
+                if (state.namePrefix === undefined) state.namePrefix = '';
+                if (state.nameSuffix === undefined) state.nameSuffix = '';
                 return;
             }
         }
@@ -833,6 +834,21 @@ let projectDirHandle = null;
 let currentProject = '';
 let projectList = [];
 
+async function ensureProjectPermission() {
+    if (!projectDirHandle) return false;
+    const opts = { mode: 'readwrite' };
+    try {
+        if ((await projectDirHandle.queryPermission(opts)) === 'granted') return true;
+        const result = await projectDirHandle.requestPermission(opts);
+        if (result === 'granted') return true;
+        showToast('需要读写权限才能操作项目文件', 'error');
+        return false;
+    } catch(e) {
+        showToast('权限请求失败: ' + e.message, 'error');
+        return false;
+    }
+}
+
 async function selectProjectDir() {
     try {
         if (typeof window.showDirectoryPicker !== 'function') {
@@ -840,6 +856,13 @@ async function selectProjectDir() {
             return;
         }
         projectDirHandle = await window.showDirectoryPicker();
+        // Request write permission immediately while user activation is still active
+        const perm = await projectDirHandle.requestPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+            showToast('需要读写权限才能操作项目文件', 'error');
+            projectDirHandle = null;
+            return;
+        }
         document.getElementById('projectDir').value = projectDirHandle.name;
         await refreshProjectList();
         document.getElementById('projectActionsRow').style.display = '';
@@ -897,12 +920,15 @@ function renderProjectList() {
 
 async function loadProject(name) {
     if (!projectDirHandle) return;
+    if (!(await ensureProjectPermission())) return;
     try {
         const fileHandle = await projectDirHandle.getFileHandle(name);
         const file = await fileHandle.getFile();
         const content = await file.text();
         const data = JSON.parse(content);
         if (data && data.intType && Array.isArray(data.codes)) {
+            if (data.namePrefix === undefined) data.namePrefix = '';
+            if (data.nameSuffix === undefined) data.nameSuffix = '';
             state = data;
             currentProject = name;
             selectedRow = -1;
@@ -920,6 +946,7 @@ async function loadProject(name) {
 
 async function saveProject() {
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!(await ensureProjectPermission())) return;
     const name = currentProject;
     if (!name) {
         saveProjectAs();
@@ -940,13 +967,14 @@ async function saveProject() {
 
 async function saveProjectAs() {
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!(await ensureProjectPermission())) return;
     const name = prompt('请输入项目名称（.json 自动添加）:', '');
     if (!name) return;
     const filename = name.endsWith('.json') ? name : name + '.json';
-    // Check if exists
     if (projectList.includes(filename)) {
         if (!confirm(`项目 "${filename}" 已存在，是否覆盖？`)) return;
     }
+    if (!(await ensureProjectPermission())) return;
     try {
         const fileHandle = await projectDirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
@@ -963,18 +991,19 @@ async function saveProjectAs() {
 
 async function newProject() {
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!(await ensureProjectPermission())) return;
     const input = document.getElementById('newProjectName');
     let name = input.value.trim();
     if (!name) {
-        name = prompt('请输入新项目名称:', '');
-        if (!name) return;
+        showToast('请先在上方输入框中填写项目名称', 'info');
+        input.focus();
+        return;
     }
     const filename = name.endsWith('.json') ? name : name + '.json';
     if (projectList.includes(filename)) {
         showToast(`项目 "${filename}" 已存在`, 'error');
         return;
     }
-    // Create empty project file
     state = defaultState();
     currentProject = '';
     selectedRow = -1;
@@ -997,6 +1026,7 @@ async function newProject() {
 
 async function deleteProject() {
     if (!projectDirHandle) { showToast('请先选择项目文件夹', 'error'); return; }
+    if (!(await ensureProjectPermission())) return;
     const name = currentProject;
     if (!name) { showToast('当前未打开任何项目', 'info'); return; }
     if (!confirm(`确定要删除项目 "${name}" 吗？`)) return;
