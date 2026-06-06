@@ -219,6 +219,7 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
         <button class="btn btn-success btn-sm" onclick="addCode()">＋ 添加</button>
         <button class="btn btn-warning btn-sm" onclick="insertCode()">↑ 插入</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCode()">✕ 删除</button>
+        <input type="text" id="searchBox" placeholder="🔍 模糊搜索名称、描述、码值…" oninput="onSearchChange()" style="flex:1;min-width:140px;max-width:280px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;outline:none">
         <span class="status-msg" id="statusMsg">共 0 个错误码</span>
     </div>
     <div class="pagination" id="paginationBar" style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap">
@@ -271,17 +272,43 @@ let state = null;
 let selectedRow = -1;
 let pageSize = 20;
 let currentPage = 1;
+let searchTerm = '';
+
+function getFilteredIndices() {
+    if (!searchTerm) return state.codes.map((_, i) => i);
+    const q = searchTerm.toLowerCase();
+    const result = [];
+    for (let i = 0; i < state.codes.length; i++) {
+        const c = state.codes[i];
+        const fullName = getFullName(i).toLowerCase();
+        const body = (c.name || '').toLowerCase();
+        const desc = (c.desc || '').toLowerCase();
+        const hexVal = formatHex(computeFull(Number(c.value) || 0)).toLowerCase();
+        const decVal = String(Number(c.value));
+        if (fullName.includes(q) || body.includes(q) || desc.includes(q) || hexVal.includes(q) || decVal.includes(q)) {
+            result.push(i);
+        }
+    }
+    return result;
+}
 
 function getTotalPages() {
-    return Math.max(1, Math.ceil(state.codes.length / pageSize));
+    return Math.max(1, Math.ceil(getFilteredIndices().length / pageSize));
 }
 
 function paginate() {
     if (currentPage > getTotalPages()) currentPage = getTotalPages();
     if (currentPage < 1) currentPage = 1;
     const start = (currentPage - 1) * pageSize;
-    const end = Math.min(start + pageSize, state.codes.length);
-    return { start, end };
+    const end = Math.min(start + pageSize, getFilteredIndices().length);
+    const indices = getFilteredIndices().slice(start, end);
+    return indices;
+}
+
+function onSearchChange() {
+    searchTerm = document.getElementById('searchBox').value;
+    currentPage = 1;
+    render();
 }
 
 function goToPage(n) {
@@ -431,8 +458,8 @@ function render() {
     tbody.innerHTML = '';
     let hasOverflow = false;
 
-    const { start, end } = paginate();
-    for (let idx = start; idx < end; idx++) {
+    const pageIndices = paginate();
+    for (const idx of pageIndices) {
         const c = state.codes[idx];
         const tr = document.createElement('tr');
         if (idx === selectedRow) tr.className = 'selected';
@@ -514,13 +541,16 @@ function render() {
         const pf = state.namePrefix || '', sf = state.nameSuffix || '';
         hint.textContent = pf || sf ? `(${pf}正文${sf})` : '';
     }
-    document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
+    const filteredCount = getFilteredIndices().length;
+    const showing = (searchTerm && filteredCount !== state.codes.length) ? `，显示 ${filteredCount} 个` : '';
+    document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${showing}${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
 
     // Update pagination
     const totalPages = getTotalPages();
     const pgBar = document.getElementById('paginationBar');
     if (pgBar) {
-        document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 (${state.codes.length} 条)`;
+        const total = getFilteredIndices().length;
+        document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 (${total} 条)`;
         document.getElementById('pageSizeSelect').value = String(pageSize);
     }
 
