@@ -731,7 +731,7 @@ function generateCode() {
     const sf = state.nameSuffix || '';
     if (pf || sf) {
         const bodyExample = (state.codes[0] && state.codes[0].name) || 'NAME';
-        const macroName = pf.replace(/_+$/, '') || 'EC';
+        const macroName = 'EC';
         const tokenSeq = (pf ? `${pf} ## ` : '') + 'name' + (sf ? ` ## ${sf}` : '');
         lines.push(`// Helper macro: reference error codes by base name (auto prepends prefix / appends suffix)`);
         lines.push(`// Example: ${macroName}(${bodyExample})  =>  ${pf}${bodyExample}${sf}`);
