@@ -221,6 +221,21 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
         <button class="btn btn-danger btn-sm" onclick="deleteCode()">✕ 删除</button>
         <span class="status-msg" id="statusMsg">共 0 个错误码</span>
     </div>
+    <div class="pagination" id="paginationBar" style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="goToPage(1)" title="首页">⏮</button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage - 1)" title="上一页">◀</button>
+        <span id="pageInfo" style="font-size:13px;color:#555;padding:0 4px"></span>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(currentPage + 1)" title="下一页">▶</button>
+        <button class="btn btn-outline btn-sm" onclick="goToPage(getTotalPages())" title="末页">⏭</button>
+        <span style="font-size:13px;color:#999">每页</span>
+        <select id="pageSizeSelect" style="padding:4px 6px;border:1px solid #d0d0d0;border-radius:4px;font-size:13px" onchange="onPageSizeChange()">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <span style="font-size:13px;color:#999">条</span>
+    </div>
 </div>
 
 <div class="card" id="previewCard" style="display:none">
@@ -254,6 +269,32 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
 const STATE_KEY = 'errCodeEditorState';
 let state = null;
 let selectedRow = -1;
+let pageSize = 20;
+let currentPage = 1;
+
+function getTotalPages() {
+    return Math.max(1, Math.ceil(state.codes.length / pageSize));
+}
+
+function paginate() {
+    if (currentPage > getTotalPages()) currentPage = getTotalPages();
+    if (currentPage < 1) currentPage = 1;
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, state.codes.length);
+    return { start, end };
+}
+
+function goToPage(n) {
+    currentPage = Math.max(1, Math.min(n, getTotalPages()));
+    selectedRow = -1;
+    render();
+}
+
+function onPageSizeChange() {
+    pageSize = parseInt(document.getElementById('pageSizeSelect').value) || 20;
+    currentPage = 1;
+    render();
+}
 
 const TYPE_BITS = { 'uint8_t':8, 'uint16_t':16, 'uint32_t':32, 'uint64_t':64, 'int8_t':8, 'int16_t':16, 'int32_t':32, 'int64_t':64 };
 const TYPE_SIGNED = { 'uint8_t':false, 'uint16_t':false, 'uint32_t':false, 'uint64_t':false, 'int8_t':true, 'int16_t':true, 'int32_t':true, 'int64_t':true };
@@ -390,12 +431,13 @@ function render() {
     tbody.innerHTML = '';
     let hasOverflow = false;
 
-    state.codes.forEach((c, idx) => {
+    const { start, end } = paginate();
+    for (let idx = start; idx < end; idx++) {
+        const c = state.codes[idx];
         const tr = document.createElement('tr');
         if (idx === selectedRow) tr.className = 'selected';
 
         const fullVal = computeFull(Number(c.value) || 0);
-
         const isOverflow = Number(c.value) > maxVal;
         if (isOverflow) hasOverflow = true;
         const hasConflict = conflicts.has(idx);
@@ -435,7 +477,7 @@ function render() {
             selectedRow = idx; render();
         });
         tbody.appendChild(tr);
-    });
+    }
 
     // Validate module bits
     const total = getTotalBits();
@@ -473,6 +515,14 @@ function render() {
         hint.textContent = pf || sf ? `(${pf}正文${sf})` : '';
     }
     document.getElementById('statusMsg').textContent = `共 ${state.codes.length} 个错误码${hasOverflow ? ' | ⚠ 有值超出范围' : ''}${conflicts.size > 0 ? ' | ⚠ 存在重复码值' : ''}`;
+
+    // Update pagination
+    const totalPages = getTotalPages();
+    const pgBar = document.getElementById('paginationBar');
+    if (pgBar) {
+        document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 (${state.codes.length} 条)`;
+        document.getElementById('pageSizeSelect').value = String(pageSize);
+    }
 
     saveState();
 }
@@ -570,6 +620,7 @@ function addCode() {
     if (val > maxVal) val = maxVal;
     state.codes.push({ name: 'ERR_NEW', auto: true, value: val, desc: '' });
     selectedRow = state.codes.length - 1;
+    currentPage = getTotalPages();
     render();
     showToast(`已添加错误码 #${state.codes.length}`, 'success');
 }
@@ -599,6 +650,7 @@ function deleteCode() {
     const name = state.codes[selectedRow].name;
     state.codes.splice(selectedRow, 1);
     if (selectedRow >= state.codes.length) selectedRow = state.codes.length - 1;
+    if (currentPage > getTotalPages()) currentPage = getTotalPages();
     render();
     showToast(`已删除 "${name}"`, 'info');
 }
@@ -608,6 +660,7 @@ function deleteRow(idx) {
     state.codes.splice(idx, 1);
     if (selectedRow >= state.codes.length) selectedRow = state.codes.length - 1;
     if (selectedRow === idx) selectedRow = -1;
+    if (currentPage > getTotalPages()) currentPage = getTotalPages();
     render();
     showToast(`已删除 "${name}"`, 'info');
 }
