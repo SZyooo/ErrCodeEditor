@@ -147,13 +147,6 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
             <input type="text" id="nameSuffix" value="" placeholder="如 _CODE" style="width:110px;font-family:monospace" onchange="onNameTemplateChange()">
         </div>
         <div class="form-group">
-            <label>定义方式</label>
-            <div class="radio-group">
-                <label><input type="radio" name="style" value="define" checked onchange="onSettingsChange()"> #define</label>
-                <label><input type="radio" name="style" value="enum" onchange="onSettingsChange()"> enum</label>
-            </div>
-        </div>
-        <div class="form-group">
             <label>模块编号</label>
             <input type="number" id="moduleId" value="1" min="0" onchange="onModuleIdChange()" style="width:90px">
         </div>
@@ -233,7 +226,15 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
 
 <div class="card">
     <h2>🚀 生成</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div class="radio-group" style="gap:6px">
+            <label style="background:#f0f2f5;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:500;font-size:14px;border:2px solid transparent;transition:all 0.15s" id="styleDefineLabel">
+                <input type="radio" name="style" value="define" checked onchange="onStyleChange()" style="display:none"> #define
+            </label>
+            <label style="background:#f0f2f5;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:500;font-size:14px;border:2px solid transparent;transition:all 0.15s" id="styleEnumLabel">
+                <input type="radio" name="style" value="enum" onchange="onStyleChange()" style="display:none"> enum
+            </label>
+        </div>
         <button class="btn btn-outline" onclick="togglePreview()">🔍 预览代码</button>
         <button class="btn btn-primary" onclick="generateAndSave()">📄 生成代码并保存</button>
     </div>
@@ -435,9 +436,18 @@ function render() {
     document.getElementById('moduleId').value = state.moduleId;
     document.getElementById('namePrefix').value = state.namePrefix || '';
     document.getElementById('nameSuffix').value = state.nameSuffix || '';
-    document.querySelectorAll('input[name="style"]').forEach(r => {
-        r.checked = (r.value === (state.useDefine ? 'define' : 'enum'));
-    });
+    // Highlight selected style button
+    const defLabel = document.getElementById('styleDefineLabel');
+    const enumLabel = document.getElementById('styleEnumLabel');
+    if (defLabel && enumLabel) {
+        if (state.useDefine) {
+            defLabel.style.borderColor = '#4a6cf7'; defLabel.style.background = '#eef1ff';
+            enumLabel.style.borderColor = 'transparent'; enumLabel.style.background = '#f0f2f5';
+        } else {
+            enumLabel.style.borderColor = '#4a6cf7'; enumLabel.style.background = '#eef1ff';
+            defLabel.style.borderColor = 'transparent'; defLabel.style.background = '#f0f2f5';
+        }
+    }
     document.getElementById('filePath').value = state.filePath || '';
 
     document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}位 / 错误码: ${ebits}位`;
@@ -464,13 +474,14 @@ function escHtml(s) {
 
 // Event handlers
 function onSettingsChange() {
-    const intType = document.getElementById('intType').value;
-    const moduleBits = parseInt(document.getElementById('moduleBits').value);
-    const useDefine = document.querySelector('input[name="style"]:checked').value === 'define';
-    state.intType = intType;
-    state.moduleBits = moduleBits;
-    state.useDefine = useDefine;
+    state.intType = document.getElementById('intType').value;
+    state.moduleBits = parseInt(document.getElementById('moduleBits').value);
     selectedRow = -1;
+    render();
+}
+
+function onStyleChange() {
+    state.useDefine = document.querySelector('input[name="style"]:checked').value === 'define';
     render();
 }
 
@@ -642,6 +653,9 @@ function generateCode() {
     lines.push(``);
     lines.push(`#include <stdint.h>`);
     lines.push(``);
+    lines.push(`/** Underlying type for error codes */`);
+    lines.push(`typedef ${baseType} err_t;`);
+    lines.push(``);
     lines.push(`/**`);
     lines.push(` * Error Code Definitions`);
     lines.push(` * Type: ${baseType} (${total}-bit)`);
@@ -666,6 +680,20 @@ function generateCode() {
     lines.push(``);
     lines.push(`#define MOD_ID  (${modId})`);
     lines.push(``);
+
+    // Generate helper macro: derives from prefix, auto-strips trailing underscore
+    const pf = state.namePrefix || '';
+    const sf = state.nameSuffix || '';
+    if (pf || sf) {
+        const bodyExample = (state.codes[0] && state.codes[0].name) || 'NAME';
+        const macroName = pf.replace(/_+$/, '') || 'EC';
+        const tokenSeq = (pf ? `${pf} ## ` : '') + 'name' + (sf ? ` ## ${sf}` : '');
+        lines.push(`// Helper macro: reference error codes by base name (auto prepends prefix / appends suffix)`);
+        lines.push(`// Example: ${macroName}(${bodyExample})  =>  ${pf}${bodyExample}${sf}`);
+        lines.push(`#define ${macroName}(name)  ${tokenSeq}`);
+        lines.push(``);
+    }
+
     lines.push(`// ========== Error Code Values ==========`);
     lines.push(``);
 
