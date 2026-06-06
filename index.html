@@ -155,11 +155,17 @@ tbody tr td .row-actions .btn-ovf-row { color: #f59e0b; }
         <div class="form-group" style="flex:1">
             <label>输出头文件路径</label>
             <div class="file-row">
-                <input type="text" id="filePath" placeholder="选择或输入头文件路径..." readonly>
-                <button class="btn btn-primary btn-sm" onclick="selectFile()">📁 选择文件</button>
-                <button class="btn btn-outline btn-sm" onclick="clearFile()">清除</button>
+                <input type="text" id="fileFullPath" placeholder="📁 选择输出目录后此处显示完整路径…" readonly style="flex:1;font-family:monospace;font-size:13px;background:#f5f5f5">
+                <button class="btn btn-primary btn-sm" onclick="selectOutDir()">📁 选择</button>
+                <button class="btn btn-outline btn-sm" onclick="manualPath()">✏️ 手动</button>
+                <button class="btn btn-outline btn-sm" onclick="clearOutDir()">清除</button>
             </div>
-            <div class="template-hint" id="fileHint">💡 选择文件后，点击"生成代码"即可写入。同一文件只需选择一次。</div>
+            <div class="file-row" style="margin-top:5px;gap:6px">
+                <span style="font-size:13px;color:#555">文件名:</span>
+                <input type="text" id="fileBaseName" value="err_code.h" placeholder="err_code.h" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;font-family:monospace;width:180px;outline:none" onchange="updateFullPathDisplay()">
+                <span style="font-size:13px;color:#999" id="outDirHint"></span>
+            </div>
+            <div class="template-hint" id="fileHint">💡 选择输出目录后点击"生成代码"即可直接写入，同一目录只需选择一次。</div>
         </div>
     </div>
 </div>
@@ -258,9 +264,11 @@ function defaultState() {
         moduleBits: 8,
         moduleId: 1,
         useDefine: true,
-        filePath: '',
+        outDirName: '',
+        outFileName: 'err_code.h',
         namePrefix: 'ERR_',
         nameSuffix: '',
+        lastProjectName: '',
         codes: [
             { name: 'SUCCESS', auto: true, value: 0, desc: '操作成功' },
             { name: 'FAIL', auto: true, value: 1, desc: '操作失败' },
@@ -279,9 +287,16 @@ function loadState() {
             const s = JSON.parse(raw);
             if (s && s.intType && Array.isArray(s.codes)) {
                 state = s;
-                // Migration: old state (no namePrefix) -> keep names as-is with empty prefix
                 if (state.namePrefix === undefined) state.namePrefix = '';
                 if (state.nameSuffix === undefined) state.nameSuffix = '';
+                if (state.outFileName === undefined) state.outFileName = 'err_code.h';
+                if (state.outDirName === undefined) state.outDirName = '';
+                if (state.manualFullPath === undefined && (state.filePath || state.outDirName)) {
+                    // Old state: migrate filePath
+                    state.manualFullPath = state.filePath || '';
+                    state.outDirName = '';
+                }
+                if (state.lastProjectName === undefined) state.lastProjectName = '';
                 return;
             }
         }
@@ -448,7 +463,8 @@ function render() {
             defLabel.style.borderColor = 'transparent'; defLabel.style.background = '#f0f2f5';
         }
     }
-    document.getElementById('filePath').value = state.filePath || '';
+    document.getElementById('fileBaseName').value = state.outFileName || 'err_code.h';
+    updateFullPathDisplay();
 
     document.getElementById('bitsInfo').textContent = `模块: ${state.moduleBits}位 / 错误码: ${ebits}位`;
     const hint = document.getElementById('nameTemplateHint');
@@ -597,43 +613,72 @@ function deleteRow(idx) {
 }
 
 // File handling
-let fileHandle = null;
+let outDirHandle = null;
 
-async function selectFile() {
+function getFullOutPath() {
+    const dir = state.outDirName || '';
+    const file = state.outFileName || 'err_code.h';
+    return dir ? `${dir}/${file}` : file;
+}
+
+function updateFullPathDisplay() {
+    const val = document.getElementById('fileBaseName').value.trim();
+    if (val) state.outFileName = val;
+    const fp = document.getElementById('fileFullPath');
+    const hint = document.getElementById('outDirHint');
+    if (state.outDirName) {
+        fp.value = getFullOutPath();
+        hint.textContent = `(${state.outDirName}/)`;
+    } else {
+        fp.value = state.manualFullPath || '';
+        hint.textContent = '';
+    }
+}
+
+async function selectOutDir() {
     try {
-        if (typeof window.showSaveFilePicker !== 'function') {
-            // Fallback: just let user type path
-            const path = prompt('请输入头文件完整路径：', state.filePath || '');
-            if (path) {
-                state.filePath = path;
-                render();
-                showToast(`已设置路径: ${path}`, 'info');
-            }
+        if (typeof window.showDirectoryPicker !== 'function') {
+            showToast('当前浏览器不支持文件夹选择，请使用 Chrome 或 Edge', 'error');
             return;
         }
-        const opts = {
-            suggestedName: 'err_code.h',
-            types: [{
-                description: 'C/C++ Header',
-                accept: { 'text/x-c': ['.h', '.hpp'] }
-            }]
-        };
-        fileHandle = await window.showSaveFilePicker(opts);
-        state.filePath = fileHandle.name;
+        outDirHandle = await window.showDirectoryPicker();
+        const perm = await outDirHandle.requestPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+            showToast('需要读写权限才能保存文件', 'error');
+            outDirHandle = null;
+            return;
+        }
+        state.outDirName = outDirHandle.name;
+        state.manualFullPath = '';
+        updateFullPathDisplay();
         render();
-        showToast(`已选择文件: ${fileHandle.name}`, 'success');
+        showToast(`已选择输出目录: ${outDirHandle.name}`, 'success');
     } catch (e) {
         if (e.name !== 'AbortError') {
-            showToast('选择文件失败: ' + e.message, 'error');
+            showToast('选择目录失败: ' + e.message, 'error');
         }
     }
 }
 
-function clearFile() {
-    state.filePath = '';
-    fileHandle = null;
+function clearOutDir() {
+    state.outDirName = '';
+    state.manualFullPath = '';
+    outDirHandle = null;
+    updateFullPathDisplay();
     render();
-    showToast('已清除文件路径', 'info');
+    showToast('已清除输出目录', 'info');
+}
+
+function manualPath() {
+    const path = prompt('请输入头文件的完整保存路径：', state.manualFullPath || getFullOutPath() || '');
+    if (path) {
+        state.manualFullPath = path;
+        state.outDirName = '';
+        outDirHandle = null;
+        updateFullPathDisplay();
+        render();
+        showToast(`已设置路径: ${path}`, 'info');
+    }
 }
 
 // Code generation
@@ -744,55 +789,46 @@ function togglePreview() {
 async function generateAndSave() {
     const code = generateCode();
 
-    // Show preview
     document.getElementById('previewCode').textContent = code;
     document.getElementById('previewCard').style.display = 'block';
 
-    if (!state.filePath && !fileHandle) {
-        showToast('请先选择输出头文件路径', 'error');
-        return;
-    }
+    const filename = state.outFileName || 'err_code.h';
 
-    try {
-        if (fileHandle) {
-            // File System Access API
-            const writable = await fileHandle.createWritable();
+    if (outDirHandle) {
+        try {
+            const fh = await outDirHandle.getFileHandle(filename, { create: true });
+            const writable = await fh.createWritable();
             await writable.write(code);
             await writable.close();
-            showToast(`✅ 已生成并保存到: ${fileHandle.name}`, 'success');
-        } else {
-            // Fallback: try to use the File System Access API to get a file handle
-            try {
-                if (typeof window.showSaveFilePicker === 'function') {
-                    const opts = {
-                        suggestedName: state.filePath || 'err_code.h',
-                        types: [{
-                            description: 'C/C++ Header',
-                            accept: { 'text/x-c': ['.h', '.hpp'] }
-                        }]
-                    };
-                    const handle = await window.showSaveFilePicker(opts);
-                    const writable = await handle.createWritable();
-                    await writable.write(code);
-                    await writable.close();
-                    fileHandle = handle;
-                    state.filePath = handle.name;
-                    render();
-                    showToast(`✅ 已生成并保存到: ${handle.name}`, 'success');
-                } else {
-                    // If API is not available, provide manual save
-                    downloadFile(code, state.filePath || 'err_code.h');
-                    showToast('浏览器不支持直接保存，已触发下载', 'info');
-                }
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    downloadFile(code, state.filePath || 'err_code.h');
-                    showToast('已触发下载保存', 'info');
-                }
+            showToast(`✅ 已保存到: ${state.outDirName}/${filename}`, 'success');
+        } catch (e) {
+            showToast('保存失败: ' + e.message, 'error');
+        }
+    } else if (state.manualFullPath) {
+        downloadFile(code, state.manualFullPath.replace(/^.*[/\\]/, ''));
+        showToast(`路径设为: ${state.manualFullPath}，已触发下载`, 'info');
+    } else {
+        try {
+            if (typeof window.showSaveFilePicker === 'function') {
+                const opts = {
+                    suggestedName: filename,
+                    types: [{ description: 'C/C++ Header', accept: { 'text/x-c': ['.h', '.hpp'] } }]
+                };
+                const handle = await window.showSaveFilePicker(opts);
+                const writable = await handle.createWritable();
+                await writable.write(code);
+                await writable.close();
+                showToast(`✅ 已保存到: ${handle.name}`, 'success');
+            } else {
+                downloadFile(code, filename);
+                showToast('浏览器不支持直接保存，已触发下载', 'info');
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                downloadFile(code, filename);
+                showToast('已触发下载保存', 'info');
             }
         }
-    } catch (e) {
-        showToast('保存失败: ' + e.message, 'error');
     }
 }
 
@@ -850,7 +886,7 @@ function resetAll() {
     if (!confirm('确定要重置所有设置和错误码列表吗？')) return;
     state = defaultState();
     selectedRow = -1;
-    fileHandle = null;
+    outDirHandle = null;
     currentProject = '';
     render();
     renderProjectList();
@@ -895,6 +931,10 @@ async function selectProjectDir() {
         await refreshProjectList();
         document.getElementById('projectActionsRow').style.display = '';
         renderProjectList();
+        // Auto-load last project if it exists in this directory
+        if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
+            await loadProject(state.lastProjectName);
+        }
         showToast(`已选择项目文件夹: ${projectDirHandle.name}`, 'success');
     } catch(e) {
         if (e.name !== 'AbortError') {
@@ -959,8 +999,9 @@ async function loadProject(name) {
             if (data.nameSuffix === undefined) data.nameSuffix = '';
             state = data;
             currentProject = name;
+            state.lastProjectName = name;
             selectedRow = -1;
-            fileHandle = null;
+            outDirHandle = null;
             render();
             renderProjectList();
             showToast(`✅ 已加载项目: ${name}`, 'success');
@@ -1009,6 +1050,7 @@ async function saveProjectAs() {
         await writable.write(JSON.stringify(state, null, 2));
         await writable.close();
         currentProject = filename;
+        state.lastProjectName = filename;
         await refreshProjectList();
         renderProjectList();
         showToast(`💾 已保存项目: ${filename}`, 'success');
@@ -1035,13 +1077,14 @@ async function newProject() {
     state = defaultState();
     currentProject = '';
     selectedRow = -1;
-    fileHandle = null;
+    outDirHandle = null;
     try {
         const fileHandle = await projectDirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(JSON.stringify(state, null, 2));
         await writable.close();
         currentProject = filename;
+        state.lastProjectName = filename;
         await refreshProjectList();
         render();
         renderProjectList();
@@ -1074,6 +1117,10 @@ async function deleteProject() {
 // Init
 loadState();
 render();
+// Remind user to select project folder if they have a last project
+if (state.lastProjectName && !projectDirHandle) {
+    console.log(`💡 Last project was "${state.lastProjectName}" — select the projects/ folder to auto-load it`);
+}
 
 // Recalc on window focus (in case of clock changes etc)
 window.addEventListener('focus', () => render());
