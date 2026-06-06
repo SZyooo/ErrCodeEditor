@@ -977,6 +977,63 @@ function resetAll() {
     showToast('已重置为默认状态', 'info');
 }
 
+// ===== IndexedDB: persist directory handle across sessions =====
+const DB_NAME = 'ErrCodeEditor';
+const DB_VER = 1;
+const STORE_NAME = 'handles';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VER);
+        req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveDirHandle(handle) {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(handle, 'projectDir');
+        await new Promise((resolve, reject) => {
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+    } catch(e) { console.warn('saveDirHandle failed:', e); }
+}
+
+async function loadDirHandle() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get('projectDir');
+        const result = await new Promise((resolve, reject) => {
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+        db.close();
+        return result || null;
+    } catch(e) { return null; }
+}
+
+async function clearDirHandle() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete('projectDir');
+        await new Promise((resolve, reject) => {
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+    } catch(e) {}
+}
+
 // ===== Project Management =====
 let projectDirHandle = null;
 let currentProject = '';
@@ -1013,6 +1070,7 @@ async function selectProjectDir() {
         }
         document.getElementById('projectDir').value = projectDirHandle.name;
         document.getElementById('projectRestoreHint').style.display = 'none';
+        await saveDirHandle(projectDirHandle);
         await refreshProjectList();
         document.getElementById('projectActionsRow').style.display = '';
         renderProjectList();
@@ -1035,6 +1093,7 @@ function clearProjectDir() {
     document.getElementById('projectDir').value = '';
     document.getElementById('projectActionsRow').style.display = 'none';
     document.getElementById('projectRestoreHint').style.display = state.lastProjectName ? '' : 'none';
+    clearDirHandle();
     showToast('已清除项目文件夹', 'info');
 }
 
@@ -1203,17 +1262,58 @@ async function deleteProject() {
 // Init
 loadState();
 render();
-// Show visible reminder to select project folder
-if (state.lastProjectName) {
-    const hint = document.getElementById('projectRestoreHint');
-    if (hint) {
-        hint.style.display = projectDirHandle ? 'none' : '';
-        hint.textContent = `📂 上次项目: ${state.lastProjectName} — 点击上方"选择文件夹"选中 projects/ 目录即可自动恢复`;
-        if (!projectDirHandle) {
+
+// Try to restore project directory handle from IndexedDB
+(async () => {
+    if (!projectDirHandle && state.lastProjectName) {
+        const stored = await loadDirHandle();
+        if (stored) {
+            try {
+                const perm = await stored.queryPermission({ mode: 'readwrite' });
+                if (perm === 'granted') {
+                    projectDirHandle = stored;
+                    document.getElementById('projectDir').value = projectDirHandle.name;
+                    document.getElementById('projectRestoreHint').style.display = 'none';
+                    await refreshProjectList();
+                    document.getElementById('projectActionsRow').style.display = '';
+                    renderProjectList();
+                    if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
+                        await loadProject(state.lastProjectName);
+                    }
+                    showToast(`✅ 已自动恢复项目目录: ${projectDirHandle.name}`, 'success');
+                    return;
+                }
+                // Permission lost — try to re-request
+                const rePerm = await stored.requestPermission({ mode: 'readwrite' });
+                if (rePerm === 'granted') {
+                    projectDirHandle = stored;
+                    document.getElementById('projectDir').value = projectDirHandle.name;
+                    document.getElementById('projectRestoreHint').style.display = 'none';
+                    await refreshProjectList();
+                    document.getElementById('projectActionsRow').style.display = '';
+                    renderProjectList();
+                    if (state.lastProjectName && projectList.includes(state.lastProjectName)) {
+                        await loadProject(state.lastProjectName);
+                    }
+                    showToast(`✅ 已自动恢复项目目录: ${projectDirHandle.name}`, 'success');
+                    return;
+                }
+            } catch(e) {
+                // Handle is stale, clear it
+                clearDirHandle();
+            }
+        }
+    }
+    // Show hint if we couldn't restore
+    if (state.lastProjectName) {
+        const hint = document.getElementById('projectRestoreHint');
+        if (hint) {
+            hint.style.display = '';
+            hint.textContent = `📂 上次项目: ${state.lastProjectName} — 点击上方"选择文件夹"选中 projects/ 目录即可自动恢复`;
             setTimeout(() => showToast(`📂 上次项目 "${state.lastProjectName}" — 选择 projects/ 文件夹即可自动恢复`, 'info', 5000), 500);
         }
     }
-}
+})();
 
 // Recalc on window focus (in case of clock changes etc)
 window.addEventListener('focus', () => render());
